@@ -47,7 +47,7 @@ def coulombkernel(r):
 				I_top = ellip_top * alpha_top
 				I_bot = ellip_bot * alpha_bot
 				M[i,j] = 0.5 * (I_top + I_bot) * d
-	return M
+    return M
 
 
 N = 100
