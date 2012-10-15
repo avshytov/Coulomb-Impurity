@@ -50,44 +50,45 @@ def coulombkernel(r):
     return M
 
 
-N = 100
-r_min = 0.001
-r_max = 25.0
-r_0 = 1.0
+if __name__ == '__main__':
+   N = 100
+   r_min = 0.001
+   r_max = 25.0
+   r_0 = 1.0
 
-r = zeros((N))  
+   r = zeros((N))  
 
-ivals = array(range(0, N))
-spaceri = math.log(r_max/r_min) * (1.0/(N - 1.0))
-r = r_min * exp(spaceri * ivals)
+   ivals = array(range(0, N))
+   spaceri = math.log(r_max/r_min) * (1.0/(N - 1.0))
+   r = r_min * exp(spaceri * ivals)
 
-M = coulombkernel(r)
-rho_j = 1.0 / (1.0 + r**2)**1.5				
-phi_i = dot(M, rho_j) 
-U = 1.0 / ( 1.0 + r**2)**0.5 
-
-
-plot(r, phi_i)
-plot(r, U)
-savefig("image1.pdf")
-
-U = 1.0 / ( 1.0 + r**2)**0.5 
+   M = coulombkernel(r)
+   rho_j = 1.0 / (1.0 + r**2)**1.5				
+   phi_i = dot(M, rho_j) 
+   U = 1.0 / ( 1.0 + r**2)**0.5 
 
 
-plot(r, phi_i)
-plot(r, U)
-savefig("image1.pdf")
+   plot(r, phi_i)
+   plot(r, U)
+   savefig("image1.pdf")
 
-figure()
-loglog(r, phi_i)
-loglog(r, U)
-savefig("image2.pdf")
+   U = 1.0 / ( 1.0 + r**2)**0.5 
 
-figure()
-plot(r, (phi_i / U))
-savefig("image3.pdf")
 
-show()
+   plot(r, phi_i)
+   plot(r, U)
+   savefig("image1.pdf")
+
+   figure()
+   loglog(r, phi_i)
+   loglog(r, U)
+   savefig("image2.pdf")
+
+   figure()
+   plot(r, (phi_i / U))
+   savefig("image3.pdf")
+
+   show()
 
 
 
