@@ -16,17 +16,11 @@ def coulombkernel(r):
   				    Dr = 0.5 * (r[j + 1] - r_j)
 			        else:
 				    Dr = 0.5 * (r_j - r[j - 1])
-				#Not sure if i understand what simplifications you mean. 
-                                #I have done what i assume you mean below but am unsure of the benefit.
-				#Ldr    = 2.0 * Dr * math.log(1.0 / Dr**2)
-				#Lplus  = (2.0 * r_j + Dr) * math.log(2.0 * r_j + Dr)
-				#Lminus = (2.0 * r_j - Dr) * math.log(2.0 * r_j - Dr)
-				#Lconst =  2.0 * Dr * math.log(4.0)
-				Ldr    = 2.0 * Dr * math.log(1.0 / Dr**2)
-				Lplus  = (2.0 * r_j ) * math.log(2.0 * r_j)
-				Lminus = (2.0 * r_j) * math.log(2.0 * r_j )
+				Ldr    =  Dr * math.log(1.0 / Dr**2)
 				Lconst =  2.0 * Dr * math.log(4.0)
-				M[i,j] = 0.5 * (Ldr + Lplus - Lminus + Lconst)
+                                Lplus  =  2.0 * Dr
+
+				M[i,j] = 0.5 * (Ldr + Lplus + Lconst)
 			else:
 				if j == 0:
 				        a = r_j
@@ -46,7 +40,8 @@ def coulombkernel(r):
 				alpha_bot = a / (r_i + a)
 				I_top = ellip_top * alpha_top
 				I_bot = ellip_bot * alpha_bot
-				M[i,j] = 0.5 * (I_top + I_bot) * d
+                                # i have added the constant of 4 that was previously forgotten
+				M[i,j] = 4.0 * 0.5 * (I_top + I_bot) * d
     return M
 
 
@@ -65,15 +60,15 @@ if __name__ == '__main__':
    M = coulombkernel(r)
    rho_j = 1.0 / (1.0 + r**2)**1.5				
    phi_i = dot(M, rho_j) 
-   U = 1.0 / ( 1.0 + r**2)**0.5 
-
+   U = (2 * np.pi) / ( 1.0 + r**2)**0.5 
+   # constant of 2pi has been added due to the total charge
 
    plot(r, phi_i)
    plot(r, U)
    savefig("image1.pdf")
 
-   U = 1.0 / ( 1.0 + r**2)**0.5 
-
+   U = (2 * np.pi) / ( 1.0 + r**2)**0.5 
+   #again, constant added
 
    plot(r, phi_i)
    plot(r, U)
