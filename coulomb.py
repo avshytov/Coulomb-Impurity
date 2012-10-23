@@ -61,14 +61,14 @@ if __name__ == '__main__':
    rho_j = 1.0 / (1.0 + r**2)**1.5				
    phi_i = dot(M, rho_j) 
    U = (2 * np.pi) / ( 1.0 + r**2)**0.5 
-   # constant of 2pi has been added due to the total charge
+
 
    plot(r, phi_i)
    plot(r, U)
    savefig("image1.pdf")
 
    U = (2 * np.pi) / ( 1.0 + r**2)**0.5 
-   #again, constant added
+
 
    plot(r, phi_i)
    plot(r, U)
