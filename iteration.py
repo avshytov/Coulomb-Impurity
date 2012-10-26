@@ -23,16 +23,25 @@ def solve_coulomb(rho_U, U0, r, tau_U, tau_rho):
         if (err_U < (1e-06)) and (err_rho < (1e-06)):
             break
 
-    plot(r, U, label="U")
+    #plot(r, U, label="U")
+    return U
 
+Nf = 2
+alpha = 2.5
 
 def rho_minus12(U,r):
-    return U / r / 2 / np.pi**2
+    return -U / r / 2 / np.pi**2 * Nf * alpha
 
 U0 = (r**2 + r_0**2)**(-0.5)
 tau_u = 0.1
 tau_rho = 0.1
 
-solve_coulomb(rho_minus12, U0, r, tau_u, tau_rho) 
-
+U = solve_coulomb(rho_minus12, U0, r, tau_u, tau_rho) 
+figure()
+plot (r, U)
+figure()
+loglog (r, abs(U), label='U')
+loglog (r, 1.0/r, label='1/r')
+loglog(r, 1.0/r/r, label='1/r^2')
+legend()
 show()
