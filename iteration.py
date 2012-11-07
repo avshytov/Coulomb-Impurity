@@ -6,7 +6,7 @@ N = 100
 r = np.zeros((N))
 for i in range (0,N):
     r[i] = i+1
-r_0 = 1.0
+r_0 = 0.1
 
 def solve_coulomb(rho_U, U0, r, tau_U, tau_rho):
     M = coulombkernel(r)
@@ -20,10 +20,9 @@ def solve_coulomb(rho_U, U0, r, tau_U, tau_rho):
         err_rho = norm(rho1 - rho)
         rho += tau_rho * (rho1 - rho)
         print "U error", err_U, "rho error", err_rho
-        if (err_U < (1e-06)) and (err_rho < (1e-06)):
+        if (err_U < (1e-10)) and (err_rho < (1e-10)):
             break
 
-    #plot(r, U, label="U")
     return U
 
 Nf = 2
@@ -44,4 +43,20 @@ loglog (r, abs(U), label='U')
 loglog (r, 1.0/r, label='1/r')
 loglog(r, 1.0/r/r, label='1/r^2')
 legend()
+
+
+ra = 4.0
+rb = 50.0
+
+ivals = [t[0] for t in enumerate(r) if t[1] < rb and t[1] > ra]
+xvals = [r[t] for t in ivals]
+yvals = [(abs(U[t])) for t in ivals]
+
+grad = np.polyfit(log(xvals), log(yvals), 1)
+print grad
+
+figure()
+plot (xvals, yvals)
+figure()
+loglog (xvals, yvals)
 show()
