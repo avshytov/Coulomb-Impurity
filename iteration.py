@@ -2,11 +2,15 @@ import numpy as np
 from math import *
 from coulomb import *
 
-N = 100
+N = 1000
 r = np.zeros((N))
+rmin = 0.01
+rmax = 1000
 for i in range (0,N):
-    r[i] = i+1
-r_0 = 0.1
+    r[i] = rmin * math.exp(math.log(rmax/rmin)/(N - 1.0) * i)
+    #r[i] = 0.1 * (i) + 0.01
+
+r_0 = 1.0
 
 def solve_coulomb(rho_U, U0, r, tau_U, tau_rho):
     M = coulombkernel(r)
@@ -25,7 +29,7 @@ def solve_coulomb(rho_U, U0, r, tau_U, tau_rho):
 
     return U
 
-Nf = 2
+Nf = 4
 alpha = 2.5
 
 def rho_minus12(U,r):
@@ -36,17 +40,9 @@ tau_u = 0.1
 tau_rho = 0.1
 
 U = solve_coulomb(rho_minus12, U0, r, tau_u, tau_rho) 
-figure()
-plot (r, U)
-figure()
-loglog (r, abs(U), label='U')
-loglog (r, 1.0/r, label='1/r')
-loglog(r, 1.0/r/r, label='1/r^2')
-legend()
 
-
-ra = 4.0
-rb = 50.0
+ra = 10.0
+rb = 33.0
 
 ivals = [t[0] for t in enumerate(r) if t[1] < rb and t[1] > ra]
 xvals = [r[t] for t in ivals]
@@ -54,9 +50,14 @@ yvals = [(abs(U[t])) for t in ivals]
 
 grad = np.polyfit(log(xvals), log(yvals), 1)
 print grad
+fitvals = exp(grad[1] + grad[0]*log(xvals))
 
 figure()
-plot (xvals, yvals)
+plot (r, U)
 figure()
-loglog (xvals, yvals)
+loglog (r, abs(U), label='U')
+loglog (r, 1.0/r, label='1/r')
+loglog(r, 1.0/r/r, label='1/r^2')
+loglog(xvals, abs(fitvals), label='Fit: alpha = %g' % (-grad[0]))
+legend()
 show()
