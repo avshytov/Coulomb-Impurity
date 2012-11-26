@@ -5,15 +5,16 @@ import cmath
 import math
 from math import *
 from pylab import *
+import time
 
-N = 3
+N = 1000
 H = np.zeros((2*N,2*N), dtype=complex)
 r = np.zeros((N))
 j = 1j
 rmin = 1.0
 rmax = 10.0
 
-
+t_start = time.time()
 for i in range (0,N):
     r[i] = rmin +  i*(rmax-rmin) / N
 
@@ -31,8 +32,16 @@ for y in range (0,N):
         H[2*y,2*y+1]= -1.0 * j / a
         H[2*y,2*y-1]= 1.0 * j /a
         H[2*y-1,2*y]= -1.0 * j / a
-print H
-#w, vr =  scipy.linalg.eigh(H)
+#print H
+t_fill = time.time()
+print "fill matrix: ", t_fill - t_start
+print "diagonalising ... "
+w, vr =  scipy.linalg.eigh(H)
+t_diag = time.time()
+print "diag: ", t_diag - t_fill 
+print w
+hist(w, bins=40)
+show()
 #for i in range (N-5, N+5):
 #    u = vr[i,:]
 #    c = norm((np.dot(H,u) - w[i]*u))
