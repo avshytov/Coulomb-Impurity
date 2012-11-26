@@ -3,39 +3,41 @@ import scipy
 from scipy import linalg
 import cmath
 import math
+from math import *
+from pylab import *
 
-N = 10
+N = 3
 H = np.zeros((2*N,2*N), dtype=complex)
-rho = 3.0
-m = 1
 r = np.zeros((N))
-k = 1
 j = 1j
-rmin = 1
-rmax = 10
+rmin = 1.0
+rmax = 10.0
 
 
 for i in range (0,N):
-    r[i] = rmin * math.exp(math.log(rmax/rmin)/(N - 1.0) * i) 
+    r[i] = rmin +  i*(rmax-rmin) / N
 
-for x in range (0,N):
-    for y in range (0,N):
-        if y == 0:
-            h = r[y+1] - r[y]
-        else:
-            h = r[y] - r[y-1]
+for y in range (0,N):
+    if y == 0:
+        a = r[y+1] - r[y]
+    else:
+        a = r[y] - r[y-1]
 
-        a = math.sin(k*h) / h
-        b = 2.0 / h * (math.sin(k * h / 2.0)**2)
-
-        H[2*x,2*y]=0
-        H[(2*x)+1,(2*y)]= a - j*b
-        H[(2*x),(2*y)+1]= a + j*b
-          
-#print H
-print scipy.linalg.eigh(H)
-
-
+    if y==0:
+        H[0,1] = -1.0 * j / a
+        H[1,0] = 1.0 * j /a
+    else:
+        H[2*y+1,2*y]= 1.0 * j /a
+        H[2*y,2*y+1]= -1.0 * j / a
+        H[2*y,2*y-1]= 1.0 * j /a
+        H[2*y-1,2*y]= -1.0 * j / a
+print H
+#w, vr =  scipy.linalg.eigh(H)
+#for i in range (N-5, N+5):
+#    u = vr[i,:]
+#    c = norm((np.dot(H,u) - w[i]*u))
+#    print i, c
+#    plot (r, u, label='i=%d'%i)
 
 
 
