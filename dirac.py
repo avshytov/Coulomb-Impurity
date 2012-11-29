@@ -41,16 +41,19 @@ t_diag = time.time()
 print "diag: ", t_diag - t_fill 
 print w
 hist(w, bins=40)
+for i in range (N-5, N+5):
+    u = vr[i,:]
+    u_up = u[::2]
+    u_down = u[1::2]
+    u_up_real = u_up.real
+    u_up_imag = u_up.imag
+    u_down_real = u_down.real
+    u_down_imag = u_down.imag
+    c = norm((np.dot(H,u) - w[i]*u))
+    figure()
+    plot(r, u_up_real, label='up r i=%d' %i)
+    plot(r, u_up_imag, label='up i i=%d' %i)
+    plot(r, u_down_real, label='down r i=%d' %i)
+    plot(r, u_down_imag, label='down i i=%d' %i)
+    legend()
 show()
-#for i in range (N-5, N+5):
-#    u = vr[i,:]
-#    c = norm((np.dot(H,u) - w[i]*u))
-#    print i, c
-#    plot (r, u, label='i=%d'%i)
-
-
-
-
-
-
-
