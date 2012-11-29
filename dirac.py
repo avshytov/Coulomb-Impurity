@@ -42,7 +42,7 @@ print "diag: ", t_diag - t_fill
 print w
 hist(w, bins=40)
 for i in range (N-5, N+5):
-    u = vr[i,:]
+    u = vr[:,i]
     u_up = u[::2]
     u_down = u[1::2]
     u_up_real = u_up.real
