@@ -9,30 +9,32 @@ import time
 
 N = 1000
 H = np.zeros((2*N,2*N), dtype=complex)
+P = np.zeros((2*N,2*N), dtype=complex)
+M = np.zeros((2*N,2*N), dtype=complex)
 r = np.zeros((N))
 j = 1j
+m = 1.5
 rmin = 1.0
 rmax = 10.0
-
 t_start = time.time()
+
 for i in range (0,N):
     r[i] = rmin +  i*(rmax-rmin) / N
 
 for y in range (0,N):
     if y == 0:
         a = r[y+1] - r[y]
+        P[0,1] = -1.0 * j / a
+        P[1,0] = 1.0 * j /a
     else:
         a = r[y] - r[y-1]
-
-    if y==0:
-        H[0,1] = -1.0 * j / a
-        H[1,0] = 1.0 * j /a
-    else:
-        H[2*y+1,2*y]= 1.0 * j /a
-        H[2*y,2*y+1]= -1.0 * j / a
-        H[2*y,2*y-1]= 1.0 * j /a
-        H[2*y-1,2*y]= -1.0 * j / a
-#print H
+        P[2*y+1,2*y]= 1.0 * j /a
+        P[2*y,2*y+1]= -1.0 * j / a
+        P[2*y,2*y-1]= 1.0 * j /a
+        P[2*y-1,2*y]= -1.0 * j / a
+    M[2*y,2*y+1]= -1.0 * j * (m + 0.5) / r[y]
+    M[2*y+1,2*y]= 1.0 * j * (m + 0.5) / r[y]
+H = P + M
 t_fill = time.time()
 print "fill matrix: ", t_fill - t_start
 print "diagonalising ... "
@@ -45,15 +47,16 @@ for i in range (N-5, N+5):
     u = vr[:,i]
     u_up = u[::2]
     u_down = u[1::2]
-    u_up_real = u_up.real
+    u_up_real = u_up.real 
     u_up_imag = u_up.imag
     u_down_real = u_down.real
-    u_down_imag = u_down.imag
+    u_down_imag = u_down.imag 
     c = norm((np.dot(H,u) - w[i]*u))
+    print 'c = %d' %c 
     figure()
-    plot(r, u_up_real, label='up r i=%d' %i)
-    plot(r, u_up_imag, label='up i i=%d' %i)
-    plot(r, u_down_real, label='down r i=%d' %i)
-    plot(r, u_down_imag, label='down i i=%d' %i)
+    plot(r, (u_up_real / sqrt(r)), label='up r i=%d' %i)
+    plot(r, (u_up_imag / sqrt(r)), label='up i i=%d' %i)
+    plot(r, (u_down_real / sqrt(r)), label='down r i=%d' %i)
+    plot(r, (u_down_imag / sqrt(r)), label='down i i=%d' %i)
     legend()
 show()
