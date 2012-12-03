@@ -7,14 +7,17 @@ from math import *
 from pylab import *
 import time
 
+from scipy import special
+
 N = 1000
 H = np.zeros((2*N,2*N), dtype=complex)
 P = np.zeros((2*N,2*N), dtype=complex)
 M = np.zeros((2*N,2*N), dtype=complex)
 r = np.zeros((N))
 j = 1j
-m = 1.5
-rmin = 1.0
+m = 1
+#m = 1.5
+rmin = 0.01
 rmax = 10.0
 t_start = time.time()
 
@@ -54,9 +57,22 @@ for i in range (N-5, N+5):
     c = norm((np.dot(H,u) - w[i]*u))
     print 'c = %d' %c 
     figure()
+    kr = abs(w[i]) * r
+    jm = special.jn(abs(m), kr)
+    jm1 = special.jn(abs(m + 1), kr)
+          
+    C1 = max(abs(u_up)  /sqrt(r)) / max(jm)
+    C2 = max(abs(u_down)/sqrt(r)) / max(jm1)
+    if (w[i] <  0):
+       C1 *= -1
+    
     plot(r, (u_up_real / sqrt(r)), label='up r i=%d' %i)
     plot(r, (u_up_imag / sqrt(r)), label='up i i=%d' %i)
     plot(r, (u_down_real / sqrt(r)), label='down r i=%d' %i)
     plot(r, (u_down_imag / sqrt(r)), label='down i i=%d' %i)
+    
+    plot(r, -C1 * jm,  '--', label='J_m')
+    plot(r, -C2 * jm1, '--', label='J_{m + 1}')
+    
     legend()
 show()
