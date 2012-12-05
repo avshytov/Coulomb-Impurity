@@ -13,9 +13,14 @@ N = 1000
 H = np.zeros((2*N,2*N), dtype=complex)
 P = np.zeros((2*N,2*N), dtype=complex)
 M = np.zeros((2*N,2*N), dtype=complex)
+U = np.zeros((2*N,2*N), dtype=complex)
 r = np.zeros((N))
+pot = np.zeros((N))
+psi_up = np.zeros((N))
+psi_down = np.zeros((N))
+modpsi = np.zeros((N))
 j = 1j
-m = 1
+m = 1.0
 #m = 1.5
 rmin = 0.01
 rmax = 10.0
@@ -23,6 +28,7 @@ t_start = time.time()
 
 for i in range (0,N):
     r[i] = rmin +  i*(rmax-rmin) / N
+    pot[i] = -1/r[i]
 
 for y in range (0,N):
     if y == 0:
@@ -37,7 +43,10 @@ for y in range (0,N):
         P[2*y-1,2*y]= -1.0 * j / a
     M[2*y,2*y+1]= -1.0 * j * (m + 0.5) / r[y]
     M[2*y+1,2*y]= 1.0 * j * (m + 0.5) / r[y]
-H = P + M
+    U[2*y, 2*y] = pot[y]
+    U[2*y +1, 2*y +1] = pot[y]
+
+H = P + M + U
 t_fill = time.time()
 print "fill matrix: ", t_fill - t_start
 print "diagonalising ... "
@@ -55,6 +64,10 @@ for i in range (N-5, N+5):
     u_down_real = u_down.real
     u_down_imag = u_down.imag 
     c = norm((np.dot(H,u) - w[i]*u))
+    psi_up = u_up_real / sqrt(r)
+    psi_down = u_down_imag / sqrt(r)
+    modpsi = (psi_up**2 + psi_down**2)
+
     print 'c = %d' %c 
     figure()
     kr = abs(w[i]) * r
@@ -67,12 +80,12 @@ for i in range (N-5, N+5):
        C1 *= -1
     
     plot(r, (u_up_real / sqrt(r)), label='up r i=%d' %i)
-    plot(r, (u_up_imag / sqrt(r)), label='up i i=%d' %i)
-    plot(r, (u_down_real / sqrt(r)), label='down r i=%d' %i)
+#    plot(r, (u_up_imag / sqrt(r)), label='up i i=%d' %i)
+#    plot(r, (u_down_real / sqrt(r)), label='down r i=%d' %i)
     plot(r, (u_down_imag / sqrt(r)), label='down i i=%d' %i)
-    
-    plot(r, -C1 * jm,  '--', label='J_m')
-    plot(r, -C2 * jm1, '--', label='J_{m + 1}')
-    
+    plot(r, modpsi, label='charge dens.')
+#    plot(r, -C1 * jm,  '--', label='J_m')
+#    plot(r, -C2 * jm1, '--', label='J_{m + 1}')    
     legend()
 show()
+
