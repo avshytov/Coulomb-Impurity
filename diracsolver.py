@@ -7,6 +7,7 @@ from math import *
 from pylab import *
 import time
 from scipy import special
+from ldos import *
 
 def diracham(r,pot,mlist):
     N = len(r)
@@ -62,7 +63,7 @@ def diracham(r,pot,mlist):
             psi_down = u_down_imag
             modpsi = (psi_up**2 + psi_down**2)
             cdtens[m,:,i] = modpsi[:]
-            totmodpsi += modpsi
+            totmodpsi += modpsi 
 #            if i > (N - 5) and i < (N + 5):
 #                print "Plotting state %d" %i
 #                figure()
@@ -84,21 +85,21 @@ def DOS(Emat, mlist ,r):
     c = len(Emat[0])
     N = 1 * N0  #PUT BACK TO 5000
     E = np.zeros((N))
-    N0min = 0
-    N0max = N0-1
+    N0min = N0/2 - 15
+    N0max = N0/2 + 15
     dos = np.zeros((N))
-    dosmat = np.zeros((c,N))
+    dostens = np.zeros((c,N0,N))
     doschan = np.zeros((N))
     rmax = r[N0/2 -1.0]
     gam = np.pi * 0.7 / rmax    #edit constant
     Emax = 0
     Emin = 0
     wf = np.load("cdtens.npy")
-    for k in range (0,c):
-        if Emax < Emat[N0max, k]:
-            Emax = Emat[N0max, k]
-        if Emin > Emat[N0min, k]:
-            Emin = Emat[N0min, k]
+    for m in range (0,c):
+        if Emax < Emat[N0max, m]:
+            Emax = Emat[N0max, m]
+        if Emin > Emat[N0min, m]:
+            Emin = Emat[N0min, m]
     for i in range (0,N):
         E[i] = Emin + i * (Emax - Emin)/N
     for m in range (0,c):
@@ -115,22 +116,23 @@ def DOS(Emat, mlist ,r):
                 legend()
                # show()
             for i in range (0,N):
-                dosmat[m,i] += (1/np.pi)*gam/(gam**2+(E[i]-Emat[n,m])**2) 
+                dostens[m,n,i] += (1/np.pi)*gam/(gam**2+(E[i]-Emat[n,m])**2) 
      #plot(E, doschan, label='Density of states for momentum channel %f' %mlab)
-    for j in range (0,c):
-#        doschan[:] = dosmat[j,:]
-#        plot(E,doschan, label='DOS m %d' %mlist[j])
+    for m in range (0,c):
+        for n in range (N0min, N0max):
+#        doschan[:] = dosmat[m,:] CORRECT FIRST IF NEEDED
+#        plot(E,doschan, label='DOS m %d' %mlist[m])
 #        legend()
-        dos[:] += dosmat[j,:]
+            dos[:] += dostens[m,n,:]
     show()
-#    dosmat = 2.0 * dosmat  ####### !!!! 
+    dostens = 2.0 * dostens  ####### !!!! 
     figure()
-    plot(E, (2* dos), label='%d positive momentum channels (doubled), all n' %c) ###!!!! 
+    plot(E, 2*dos, label='%d momentum channels, all n' %c) ###!!!! 
     title('Global Density of States')
     legend()
     show()
-    np.save("dosmat", dosmat)
-    return E, dosmat
+    np.save("dostens", dostens)
+    return E, dostens
 
 if __name__ == '__main__':
    N = 500
@@ -138,23 +140,20 @@ if __name__ == '__main__':
    rmax = 25.0
    r = zeros((N))
    pot = zeros((N))
-   a = 10
+   a = 0
    mlist = zeros((2*a + 1))
-#   mlist = [-1, 0, 1, 2,3,4,5,6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-#   mlist[0] = -2
+   mlist = [0, 1, 2,3,4,5,6, 7, 8, 9, 10]
+  # mlist[0] = 5
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
        pot[i] = 0.0
-   for k in range (0, (2*a + 1)):
-       mlist[k] = k - a - 1
+  # for k in range (0, (2*a + 1)):
+  #     mlist[k] = k - a - 1
    print "Momentum Channels:",  mlist
+   np.save("rvec",r)
    Emat, cdtens = diracham(r, pot, mlist)
-   E, dosmat = DOS(Emat, mlist ,r)
-#   LDOS = np.dot(cdtens, dosmat)
-#   np.save("LDOS", LDOS)
-#   pcolor(r,E,ldos)
-#   colorbar()
-#   show()
+   E, dostens = DOS(Emat, mlist ,r)
+   np.save("Evec",E)
 
 
 
