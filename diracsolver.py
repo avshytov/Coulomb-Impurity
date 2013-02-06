@@ -37,8 +37,6 @@ def diracham(r,pot,mlist):
                 P[2*y,2*y+1]= -1.0 * j / a
                 P[2*y,2*y-1]= 1.0 * j /a
                 P[2*y-1,2*y]= -1.0 * j / a
-        #for m in range (0,b):
-         #   print "Calculating Momentum Channel:", 
             M[2*y,2*y+1]= -1.0 * j * (mlist[m] + 0.5) / r[y]
             M[2*y+1,2*y]= 1.0 * j * (mlist[m] + 0.5) / r[y]
             U[2*y, 2*y] = pot[y]
@@ -64,18 +62,22 @@ def diracham(r,pot,mlist):
             modpsi = (psi_up**2 + psi_down**2)
             cdtens[m,:,i] = modpsi[:]
             totmodpsi += modpsi 
-#            if i > (N - 5) and i < (N + 5):
-#                print "Plotting state %d" %i
-#                figure()
-#                plot(r,u_up_real, label='u up real')
-#                plot(r,u_up_imag, label='u up imag')
-#                plot(r,u_down_real, label='u down real')
-#                plot(r,u_down_imag, label='u down imag')
-#                legend()
-#                figure()
-#                plot(r,totmodpsi, label='charge density m %f' %mlist[m])
-#                legend()
-#                show()
+            if False: # i >= (N - 2) and i <= (N + 1):
+                if mlist[m] < 0:
+                    print "Plotting state %d" %i
+                    figure()
+                    plot(r,u_up_real, label='u up real')
+                    plot(r,u_up_imag, label='u up imag')
+                    plot(r,u_down_real, label='u down real')
+                    plot(r,u_down_imag, label='u down imag')
+                    legend()
+                    title('Momentum Channel %d' %mlist[m])
+                    figtext(0.2, 0.85, 'Energy state %d' %i)
+                    figtext(0.2, 0.80, 'Energy = %f' %w[i])
+                figure()
+                plot(r,totmodpsi, label='charge density m %f' %mlist[m])
+                legend()
+    show()
     np.save("cdtens",cdtens)
 #    np.save("emat",Emat)
     return Emat, cdtens
@@ -85,8 +87,8 @@ def DOS(Emat, mlist ,r):
     c = len(Emat[0])
     N = 1 * N0  #PUT BACK TO 5000
     E = np.zeros((N))
-    N0min = N0/2 - 15
-    N0max = N0/2 + 15
+    N0min = N0/2 - 50
+    N0max = N0/2 + 50
     dos = np.zeros((N))
     dostens = np.zeros((c,N0,N))
     doschan = np.zeros((N))
@@ -108,6 +110,7 @@ def DOS(Emat, mlist ,r):
             if Emat[n,m] < 0.001 and Emat[n,m] > -0.001:          
                 print "Zero energy at n element =  %d" %n
                 print "m = %d"  %mlist[m]
+                print "Eigenvalue:", Emat[n,m]
                 rhoo = cdtens[m,:,n]
                 figure()
                 plot(r, rhoo, label='charge density energy=%f' %Emat[n,m])
@@ -124,14 +127,26 @@ def DOS(Emat, mlist ,r):
 #        plot(E,doschan, label='DOS m %d' %mlist[m])
 #        legend()
             dos[:] += dostens[m,n,:]
+    
+    dos = 2.0 * dos
     show()
     dostens = 2.0 * dostens  ####### !!!! 
+    
+    ra = 0.1
+    rb = 0.2
+    ivals = [t[0] for t in enumerate(E) if t[1] > ra and t[1] < rb]
+    xvals = [E[t] for t in ivals]
+    yvals = [dos[t] for t in ivals]
+    grad = np.polyfit(xvals, yvals, 1)
+    print "gradient", grad[0]
+
     figure()
-    plot(E, 2*dos, label='%d momentum channels, all n' %c) ###!!!! 
+    plot(E, dos, label='%d momentum channels, 50 n' %c) ###!!!! 
     title('Global Density of States')
     legend()
     show()
     np.save("dostens", dostens)
+    np.save("globdos", dos)
     return E, dostens
 
 if __name__ == '__main__':
@@ -140,15 +155,15 @@ if __name__ == '__main__':
    rmax = 25.0
    r = zeros((N))
    pot = zeros((N))
-   a = 0
-   mlist = zeros((2*a + 1))
-   mlist = [0, 1, 2,3,4,5,6, 7, 8, 9, 10]
+   a = 5
+#   mlist = zeros((2*a + 1))
+   mlist = np.array(range(0,a))
   # mlist[0] = 5
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
        pot[i] = 0.0
-  # for k in range (0, (2*a + 1)):
-  #     mlist[k] = k - a - 1
+#   for k in range (0, (2*a + 1)):
+#       mlist[k] = k - a - 1
    print "Momentum Channels:",  mlist
    np.save("rvec",r)
    Emat, cdtens = diracham(r, pot, mlist)
