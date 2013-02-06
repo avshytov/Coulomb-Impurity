@@ -23,24 +23,39 @@ def ldoscalc():
         ldosmat += np.dot(cdmat, dosmat)
     ldosmat = np.transpose(ldosmat)
     ldosmat = ldosmat[:,:] / r
-    np.savetxt("ldosmat.txt",ldosmat)
+    np.save("ldosmat",ldosmat)
     return ldosmat
 
 def ldosplot(ldosmat):
     r = np.load("rvec.npy")
+    nldosmat = 2 * np.pi * r * ldosmat
     E = np.load("Evec.npy")
+    ldostot = np.zeros(len(E))
     print "Producing colour plot..."
-    if True:
-        pcolor(r,E,ldosmat, vmin=0.0, vmax=0.10)
+    if False:
+        pcolor(r,E,ldosmat, vmin=0.0, vmax=0.15)
         colorbar()
-#        xvals = arange (0.3, 10.0, 0.1)
-#        yvals = 5.0/xvals
-#        plot (xvals, yvals, 'w--')
-#        plot (xvals, -yvals, 'w--')
         ylim(-10.0, 10.0)
         xlim(0.0, 12.5)
         show()
         figure()
+
+    for r1 in range (0, len(r)):
+        ldostot[:] += nldosmat[:, r1]
+    figure()
+    plot(E, ldostot, label='Global Density of States')
+    legend()
+    show()
+    rq = 0.2
+    rp = 0.4
+    ivals = [t[0] for t in enumerate(E) if t[1] > rq and t[1] < rp]
+    xvals = [E[t] for t in ivals]
+    yvals = [ldostot[t] for t in ivals]
+    grad1 = np.polyfit(xvals, yvals, 1)
+    print "gradient of ldost", grad1[0]
+
+
+
 
     for rs in [1.0, 2.0, 3.0, 4.0]:
         si = int (rs / 25.0 * 500)
@@ -55,7 +70,7 @@ def ldosplot(ldosmat):
         yvals = [ldosmat[t, si] for t in ivals]
         plot (xvals, yvals, label='slice %f' %si)
         grad = np.polyfit(xvals, yvals, 1)
-        print grad, "for r =", ri 
+        print grad[0], "for r =", ri 
     xlim(-2.5, 2.5)
     legend()
     show()
