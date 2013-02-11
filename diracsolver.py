@@ -22,6 +22,10 @@ def diracham(r,pot,mlist):
     psi_down = np.zeros((N))
     modpsi = np.zeros((N))
     totmodpsi = np.zeros((N))
+    dr = np.zeros((N))
+    dr[1:] = r[1:] - r[0:-1]
+    dr[0] = r[1] - r[0]
+    np.save("drvec", dr)
     j = 1j
    # t_start = time.time()
     for m in range (0,b): 
@@ -57,9 +61,7 @@ def diracham(r,pot,mlist):
             u_down_real = u_down.real
             u_down_imag = u_down.imag
             #c = norm((np.dot(H,u) - w[i]*u))
-            psi_up = u_up_real
-            psi_down = u_down_imag
-            modpsi = (psi_up**2 + psi_down**2)
+            modpsi = (abs(u_up)**2 + abs(u_down)**2) / (2 * np.pi * r * dr)
             cdtens[m,:,i] = modpsi[:]
             totmodpsi += modpsi 
             if False: # i >= (N - 2) and i <= (N + 1):
@@ -85,25 +87,25 @@ def diracham(r,pot,mlist):
 def DOS(Emat, mlist ,r):
     N0 = len(Emat)
     c = len(Emat[0])
-    N = 1 * N0  #PUT BACK TO 5000
+    N = 4 * N0  #PUT BACK TO 5000
     E = np.zeros((N))
-    N0min = N0/2 - 50
-    N0max = N0/2 + 50
+    N0min = 0
+    N0max = N0-1
     dos = np.zeros((N))
     dostens = np.zeros((c,N0,N))
     doschan = np.zeros((N))
     rmax = r[N0/2 -1.0]
-    gam = np.pi * 0.7 / rmax    #edit constant
-    Emax = 0
-    Emin = 0
+    gam = np.pi * 0.25 / rmax  
+    Emax = 10
+    Emin = -Emax
     wf = np.load("cdtens.npy")
-    for m in range (0,c):
-        if Emax < Emat[N0max, m]:
-            Emax = Emat[N0max, m]
-        if Emin > Emat[N0min, m]:
-            Emin = Emat[N0min, m]
+#    for m in range (0,c):
+#        if Emax < Emat[N0max, m]:
+#            Emax = Emat[N0max, m]
+#        if Emin > Emat[N0min, m]:
+#            Emin = Emat[N0min, m]
     for i in range (0,N):
-        E[i] = Emin + i * (Emax - Emin)/N
+        E[i] = Emin + float(i) * (Emax - Emin)/N
     for m in range (0,c):
         mlab = mlist[m]
         for n in range (N0min, N0max):
@@ -118,28 +120,24 @@ def DOS(Emat, mlist ,r):
                 figtext(0.2, 0.85, 'Energy state %d' %n)
                 legend()
                # show()
-            for i in range (0,N):
+            for i in range (0,N): 
                 dostens[m,n,i] += (1/np.pi)*gam/(gam**2+(E[i]-Emat[n,m])**2) 
      #plot(E, doschan, label='Density of states for momentum channel %f' %mlab)
     for m in range (0,c):
         for n in range (N0min, N0max):
-#        doschan[:] = dosmat[m,:] CORRECT FIRST IF NEEDED
-#        plot(E,doschan, label='DOS m %d' %mlist[m])
-#        legend()
             dos[:] += dostens[m,n,:]
-    
     dos = 2.0 * dos
     show()
     dostens = 2.0 * dostens  ####### !!!! 
     
-    ra = 0.1
-    rb = 0.2
-    ivals = [t[0] for t in enumerate(E) if t[1] > ra and t[1] < rb]
-    xvals = [E[t] for t in ivals]
-    yvals = [dos[t] for t in ivals]
-    grad = np.polyfit(xvals, yvals, 1)
-    print "gradient", grad[0]
-
+    if True:
+        ra = 0.05
+        rb = 0.25
+        ivals = [s[0] for s in enumerate(E) if s[1] < rb and s[1] > ra]
+        xvals = [E[s] for s in ivals]
+        yvals = [dos[s] for s in ivals]
+        grad = np.polyfit(xvals, yvals, 1)
+        print "gradient", grad[0]
     figure()
     plot(E, dos, label='%d momentum channels, 50 n' %c) ###!!!! 
     title('Global Density of States')
@@ -150,7 +148,7 @@ def DOS(Emat, mlist ,r):
     return E, dostens
 
 if __name__ == '__main__':
-   N = 500
+   N = 300
    rmin = 0.01
    rmax = 25.0
    r = zeros((N))
@@ -161,7 +159,7 @@ if __name__ == '__main__':
   # mlist[0] = 5
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
-       pot[i] = 0.0
+#       pot[i] = -0.25/r[i]
 #   for k in range (0, (2*a + 1)):
 #       mlist[k] = k - a - 1
    print "Momentum Channels:",  mlist
