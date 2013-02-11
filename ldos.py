@@ -9,26 +9,27 @@ def ldoscalc():
     dostens = np.load("dostens.npy")
     cdtens = np.load("cdtens.npy")
     r = np.load("rvec.npy")
-    m0 = len(cdtens)
-    r0 = len(cdtens[0])
-    i0 = len(dostens[0,0])
-    n0 = len(dostens[0])
-    cdmat = np.zeros((r0,n0))
-    dosmat = np.zeros((n0,i0))
-    ldosmat = np.zeros((r0,i0))
-    for m in range (0, m0):
-        print "Calculating ldos for:", (m+1), "/", m0
+    nm = len(cdtens)
+    nr = len(cdtens[0])
+    ni = len(dostens[0,0])
+    nn = len(dostens[0])
+    cdmat = np.zeros((nr,nn))
+    dosmat = np.zeros((nn,ni))
+    ldosmat = np.zeros((nr,ni))
+    for m in range (0, nm):
+        print "Calculating ldos for:", (m+1), "/", nm
         cdmat = cdtens[m,:,:]
         dosmat = dostens[m,:,:]
         ldosmat += np.dot(cdmat, dosmat)
     ldosmat = np.transpose(ldosmat)
-    ldosmat = ldosmat[:,:] / r
+    ldosmat = ldosmat[:,:] # / (2 * np.pi * r) ### INTRODUCE h
     np.save("ldosmat",ldosmat)
     return ldosmat
 
 def ldosplot(ldosmat):
     r = np.load("rvec.npy")
-    nldosmat = 2 * np.pi * r * ldosmat
+    dr = np.load("drvec.npy")
+    nldosmat = 2 * np.pi * dr * r * ldosmat
     E = np.load("Evec.npy")
     ldostot = np.zeros(len(E))
     print "Producing colour plot..."
@@ -45,15 +46,14 @@ def ldosplot(ldosmat):
     figure()
     plot(E, ldostot, label='Global Density of States')
     legend()
-    show()
-    rq = 0.2
-    rp = 0.4
+    rq = 0.05
+    rp = 0.25
     ivals = [t[0] for t in enumerate(E) if t[1] > rq and t[1] < rp]
     xvals = [E[t] for t in ivals]
     yvals = [ldostot[t] for t in ivals]
     grad1 = np.polyfit(xvals, yvals, 1)
     print "gradient of ldost", grad1[0]
-
+    show()
 
 
 
