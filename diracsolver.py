@@ -51,6 +51,16 @@ def diracham(r,pot,mlist):
         print "diagonalising... "
         w, vr =  scipy.linalg.eigh(H)
         Emat[:,m] = w[:]
+        
+        if True:
+            ea = -2
+            eb = 2
+            ivals = [t[0] for t in enumerate(w) if t[1] > ea and t[1] < eb]
+            evals = [w[t] for t in ivals]
+            if mlist[m] == 0:
+                ens = list(evals)
+            else:
+                ens.extend(evals)
         print "Resolving wavefunctions"
         for i in range (0,2*N):
             u = vr[:,i]
@@ -79,6 +89,7 @@ def diracham(r,pot,mlist):
                 figure()
                 plot(r,totmodpsi, label='charge density m %f' %mlist[m])
                 legend()
+    hist(ens, bins=40)
     show()
     np.save("cdtens",cdtens)
 #    np.save("emat",Emat)
@@ -95,7 +106,7 @@ def DOS(Emat, mlist ,r):
     dostens = np.zeros((c,N0,N))
     doschan = np.zeros((N))
     rmax = r[N0/2 -1.0]
-    gam = np.pi * 0.25 / rmax  
+    gam = np.pi * 0.55 / rmax  
     Emax = 10
     Emin = -Emax
     wf = np.load("cdtens.npy")
@@ -121,7 +132,7 @@ def DOS(Emat, mlist ,r):
                 legend()
                # show()
             for i in range (0,N): 
-                dostens[m,n,i] += (1/np.pi)*gam/(gam**2+(E[i]-Emat[n,m])**2) 
+                dostens[m,n,i]+=2.0/np.pi*gam**3/(gam**2+(E[i]-Emat[n,m])**2)**2 
      #plot(E, doschan, label='Density of states for momentum channel %f' %mlab)
     for m in range (0,c):
         for n in range (N0min, N0max):
@@ -131,8 +142,8 @@ def DOS(Emat, mlist ,r):
     dostens = 2.0 * dostens  ####### !!!! 
     
     if True:
-        ra = 0.05
-        rb = 0.25
+        ra = 0.1
+        rb = 0.2
         ivals = [s[0] for s in enumerate(E) if s[1] < rb and s[1] > ra]
         xvals = [E[s] for s in ivals]
         yvals = [dos[s] for s in ivals]
@@ -148,7 +159,7 @@ def DOS(Emat, mlist ,r):
     return E, dostens
 
 if __name__ == '__main__':
-   N = 300
+   N = 600
    rmin = 0.01
    rmax = 25.0
    r = zeros((N))
