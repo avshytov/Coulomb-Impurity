@@ -52,7 +52,7 @@ def diracham(r,pot,mlist):
         w, vr =  scipy.linalg.eigh(H)
         Emat[:,m] = w[:]
         
-        if True:
+        if False:
             ea = -2
             eb = 2
             ivals = [t[0] for t in enumerate(w) if t[1] > ea and t[1] < eb]
@@ -89,10 +89,10 @@ def diracham(r,pot,mlist):
                 figure()
                 plot(r,totmodpsi, label='charge density m %f' %mlist[m])
                 legend()
-    hist(ens, bins=40)
+#    hist(ens, bins=40)
     show()
     np.save("cdtens",cdtens)
-#    np.save("emat",Emat)
+    np.save("emat",Emat)
     return Emat, cdtens
 
 def DOS(Emat, mlist ,r):
@@ -106,7 +106,7 @@ def DOS(Emat, mlist ,r):
     dostens = np.zeros((c,N0,N))
     doschan = np.zeros((N))
     rmax = r[N0/2 -1.0]
-    gam = np.pi * 0.55 / rmax  
+    gam = np.pi * 1.2 / rmax  
     Emax = 10
     Emin = -Emax
     wf = np.load("cdtens.npy")
@@ -142,8 +142,8 @@ def DOS(Emat, mlist ,r):
     dostens = 2.0 * dostens  ####### !!!! 
     
     if True:
-        ra = 0.1
-        rb = 0.2
+        ra = 0.05
+        rb = 0.1
         ivals = [s[0] for s in enumerate(E) if s[1] < rb and s[1] > ra]
         xvals = [E[s] for s in ivals]
         yvals = [dos[s] for s in ivals]
@@ -159,15 +159,15 @@ def DOS(Emat, mlist ,r):
     return E, dostens
 
 if __name__ == '__main__':
-   N = 600
+   N = 300
    rmin = 0.01
    rmax = 25.0
    r = zeros((N))
    pot = zeros((N))
-   a = 5
-#   mlist = zeros((2*a + 1))
-   mlist = np.array(range(0,a))
-  # mlist[0] = 5
+   a = 0
+   mlist = zeros((2*a + 1))
+#   mlist = np.array(range(0,a))
+   mlist[0] = 4
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
 #       pot[i] = -0.25/r[i]
@@ -177,6 +177,7 @@ if __name__ == '__main__':
    np.save("rvec",r)
    Emat, cdtens = diracham(r, pot, mlist)
    E, dostens = DOS(Emat, mlist ,r)
+   np.save("mlist",mlist)
    np.save("Evec",E)
 
 
