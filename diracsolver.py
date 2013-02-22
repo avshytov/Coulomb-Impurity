@@ -27,7 +27,6 @@ def diracham(r,pot,mlist):
     dr[0] = r[1] - r[0]
     np.save("drvec", dr)
     j = 1j
-   # t_start = time.time()
     for m in range (0,b): 
         print "Calculating Momentum Channel:", mlist[m]
         for y in range (0,N):
@@ -46,8 +45,6 @@ def diracham(r,pot,mlist):
             U[2*y, 2*y] = pot[y]
             U[2*y +1, 2*y +1] = pot[y]
             H = P + M + U
-             #t_end = time.time()
-            # print "fill matrix: ", t_end - t_start
         print "diagonalising... "
         w, vr =  scipy.linalg.eigh(H)
         Emat[:,m] = w[:]
@@ -98,7 +95,7 @@ def diracham(r,pot,mlist):
 def DOS(Emat, mlist ,r):
     N0 = len(Emat)
     c = len(Emat[0])
-    N = 4 * N0  #PUT BACK TO 5000
+    N = 4 * N0
     E = np.zeros((N))
     N0min = 0
     N0max = N0-1
@@ -106,15 +103,10 @@ def DOS(Emat, mlist ,r):
     dostens = np.zeros((c,N0,N))
     doschan = np.zeros((N))
     rmax = r[N0/2 -1.0]
-    gam = np.pi * 1.2 / rmax  
+    gam = np.pi * 1.0 / rmax  
     Emax = 10
     Emin = -Emax
     wf = np.load("cdtens.npy")
-#    for m in range (0,c):
-#        if Emax < Emat[N0max, m]:
-#            Emax = Emat[N0max, m]
-#        if Emin > Emat[N0min, m]:
-#            Emin = Emat[N0min, m]
     for i in range (0,N):
         E[i] = Emin + float(i) * (Emax - Emin)/N
     for m in range (0,c):
@@ -133,7 +125,6 @@ def DOS(Emat, mlist ,r):
                # show()
             for i in range (0,N): 
                 dostens[m,n,i]+=2.0/np.pi*gam**3/(gam**2+(E[i]-Emat[n,m])**2)**2 
-     #plot(E, doschan, label='Density of states for momentum channel %f' %mlab)
     for m in range (0,c):
         for n in range (N0min, N0max):
             dos[:] += dostens[m,n,:]
@@ -141,7 +132,7 @@ def DOS(Emat, mlist ,r):
     show()
     dostens = 2.0 * dostens  ####### !!!! 
     
-    if True:
+    if False:
         ra = 0.05
         rb = 0.1
         ivals = [s[0] for s in enumerate(E) if s[1] < rb and s[1] > ra]
@@ -149,11 +140,11 @@ def DOS(Emat, mlist ,r):
         yvals = [dos[s] for s in ivals]
         grad = np.polyfit(xvals, yvals, 1)
         print "gradient", grad[0]
-    figure()
-    plot(E, dos, label='%d momentum channels, 50 n' %c) ###!!!! 
-    title('Global Density of States')
-    legend()
-    show()
+  #  figure()
+  #  plot(E, dos, label='%d momentum channels, 50 n' %c) ###!!!! 
+  #  title('Global Density of States')
+  #  legend()
+  #  show()
     np.save("dostens", dostens)
     np.save("globdos", dos)
     return E, dostens
@@ -164,22 +155,20 @@ if __name__ == '__main__':
    rmax = 25.0
    r = zeros((N))
    pot = zeros((N))
-   a = 0
-   mlist = zeros((2*a + 1))
-#   mlist = np.array(range(0,a))
-   mlist[0] = 4
+   a = 10
+#   mlist = zeros((2*a + 1))
+   mlist = np.array(range(0,a))
+ #  mlist[0] = 5
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
-#       pot[i] = -0.25/r[i]
-#   for k in range (0, (2*a + 1)):
-#       mlist[k] = k - a - 1
+       pot[i] = -1.0 / 4.0 / r[i]
    print "Momentum Channels:",  mlist
    np.save("rvec",r)
    Emat, cdtens = diracham(r, pot, mlist)
    E, dostens = DOS(Emat, mlist ,r)
    np.save("mlist",mlist)
    np.save("Evec",E)
-
+   np.save("potvec",pot)
 
 
 
