@@ -70,7 +70,7 @@ def diracham(r,pot,mlist):
             #c = norm((np.dot(H,u) - w[i]*u))
             modpsi = (abs(u_up)**2 + abs(u_down)**2) / (2 * np.pi * r * dr)
             cdtens[m,:,i] = modpsi[:]
-            totmodpsi += modpsi 
+            totmodpsi += modpsi
             if False: # i >= (N - 2) and i <= (N + 1):
                 if mlist[m] < 0:
                     print "Plotting state %d" %i
@@ -90,6 +90,8 @@ def diracham(r,pot,mlist):
     show()
     np.save("cdtens",cdtens)
     np.save("emat",Emat)
+    plot(r,totmodpsi*r, label='charge density m %f' %mlist[m])
+    show()
     return Emat, cdtens
 
 def DOS(Emat, mlist ,r):
@@ -155,13 +157,13 @@ if __name__ == '__main__':
    rmax = 25.0
    r = zeros((N))
    pot = zeros((N))
-   a = 10
+   a = 5
 #   mlist = zeros((2*a + 1))
    mlist = np.array(range(0,a))
- #  mlist[0] = 5
+#   mlist[0] = 2
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
-       pot[i] = -1.0 / 4.0 / r[i]
+#       pot[i] = -1.0 / 1.0 / r[i]
    print "Momentum Channels:",  mlist
    np.save("rvec",r)
    Emat, cdtens = diracham(r, pot, mlist)
