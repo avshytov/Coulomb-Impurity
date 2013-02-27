@@ -16,6 +16,7 @@ def diracham(r,pot,mlist):
     P = np.zeros((2*N,2*N), dtype=complex)
     M = np.zeros((2*N,2*N), dtype=complex)
     U = np.zeros((2*N,2*N), dtype=complex)
+    A = np.zeros((2*N,2*N), dtype=complex)
     Emat = np.zeros((2*N,b))
     cdtens = np.zeros((b,N,2*N))
     psi_up = np.zeros((N))
@@ -27,6 +28,7 @@ def diracham(r,pot,mlist):
     dr[0] = r[1] - r[0]
     np.save("drvec", dr)
     j = 1j
+    B = 1
     for m in range (0,b): 
         print "Calculating Momentum Channel:", mlist[m]
         for y in range (0,N):
@@ -44,7 +46,9 @@ def diracham(r,pot,mlist):
             M[2*y+1,2*y]= 1.0 * j * (mlist[m] + 0.5) / r[y]
             U[2*y, 2*y] = pot[y]
             U[2*y +1, 2*y +1] = pot[y]
-            H = P + M + U
+            A[2*y,2*y+1]= -1.0 * j / 2 * B * r[y]#math.sqrt(r[y])
+            A[2*y+1,2*y]= 1.0 * j / 2 *B * r[y]#math.sqrt(r[y])
+            H = P + M + U - A
         print "diagonalising... "
         w, vr =  scipy.linalg.eigh(H)
         Emat[:,m] = w[:]
@@ -90,8 +94,8 @@ def diracham(r,pot,mlist):
     show()
     np.save("cdtens",cdtens)
     np.save("emat",Emat)
-    plot(r,totmodpsi*r, label='charge density m %f' %mlist[m])
-    show()
+#    plot(r,totmodpsi*r, label='charge density m %f' %mlist[m])
+#    show()
     return Emat, cdtens
 
 def DOS(Emat, mlist ,r):
@@ -105,7 +109,7 @@ def DOS(Emat, mlist ,r):
     dostens = np.zeros((c,N0,N))
     doschan = np.zeros((N))
     rmax = r[N0/2 -1.0]
-    gam = np.pi * 1.0 / rmax  
+    gam = np.pi * 0.4 / rmax  
     Emax = 10
     Emin = -Emax
     wf = np.load("cdtens.npy")
@@ -134,21 +138,13 @@ def DOS(Emat, mlist ,r):
     show()
     dostens = 2.0 * dostens  ####### !!!! 
     
-    if False:
-        ra = 0.05
-        rb = 0.1
-        ivals = [s[0] for s in enumerate(E) if s[1] < rb and s[1] > ra]
-        xvals = [E[s] for s in ivals]
-        yvals = [dos[s] for s in ivals]
-        grad = np.polyfit(xvals, yvals, 1)
-        print "gradient", grad[0]
-  #  figure()
-  #  plot(E, dos, label='%d momentum channels, 50 n' %c) ###!!!! 
-  #  title('Global Density of States')
-  #  legend()
-  #  show()
+    figure()
+    plot(E, dos, label='%d momentum channels, 50 n' %c) ###!!!! 
+    title('Global Density of States')
+    legend()
+    show()
     np.save("dostens", dostens)
-    np.save("globdos", dos)
+    np.save("globdos(pos)", dos)
     return E, dostens
 
 if __name__ == '__main__':
@@ -157,10 +153,10 @@ if __name__ == '__main__':
    rmax = 25.0
    r = zeros((N))
    pot = zeros((N))
-   a = 5
+   a = 3
 #   mlist = zeros((2*a + 1))
    mlist = np.array(range(0,a))
-#   mlist[0] = 2
+#   mlist[0] = 0
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
 #       pot[i] = -1.0 / 1.0 / r[i]
