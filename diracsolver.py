@@ -5,11 +5,10 @@ import cmath
 import math
 from math import *
 from pylab import *
-import time
 from scipy import special
 from ldos import *
 
-def diracham(r,pot,mlist):
+def diracham(r,pot,mlist,B):
     N = len(r)
     b = len(mlist)
     H = np.zeros((2*N,2*N), dtype=complex)
@@ -27,7 +26,6 @@ def diracham(r,pot,mlist):
     dr[0] = r[1] - r[0]
     np.save("drvec", dr)
     j = 1j
-    B = 1
 
     for m in range (0,b): 
         print "Calculating Momentum Channel:", mlist[m]
@@ -116,7 +114,7 @@ def DOS(Emat, mlist ,r):
     for m in range (0,c):
         mlab = mlist[m]
         for n in range (N0min, N0max):
-            if Emat[n,m] < 0.001 and Emat[n,m] > -0.001:          
+            if False: # Emat[n,m] < 0.001 and Emat[n,m] > -0.001:          
                 print "Zero energy at n element =  %d" %n
                 print "m = %d"  %mlist[m]
                 print "Eigenvalue:", Emat[n,m]
@@ -149,18 +147,19 @@ if __name__ == '__main__':
    N = 300
    rmin = 0.01
    rmax = 25.0
+   B = 1
    r = zeros((N))
    pot = zeros((N))
-   a = 0
-   mlist = zeros((2*a + 1))
-#   mlist = np.array(range(0,a))
-   mlist[0] = 0
+   a =10
+#   mlist = zeros((2*a + 1))
+   mlist = np.array(range(0,a))
+#   mlist[0] = 0
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
-       pot[i] = -1.0 / 4.0 / r[i]
+#       pot[i] = -1.0 / 4.0 / r[i]
    print "Momentum Channels:",  mlist
    np.save("rvec",r)
-   Emat, cdtens = diracham(r, pot, mlist)
+   Emat, cdtens = diracham(r, pot, mlist,B)
    E, dostens = DOS(Emat, mlist ,r)
    np.save("mlist",mlist)
    np.save("Evec",E)
