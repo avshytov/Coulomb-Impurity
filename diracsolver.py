@@ -7,6 +7,8 @@ from math import *
 from pylab import *
 from scipy import special
 from ldos import *
+import time
+
 
 def diracham(r,pot,mlist,B):
     N = len(r)
@@ -26,7 +28,7 @@ def diracham(r,pot,mlist,B):
     dr[0] = r[1] - r[0]
     np.save("drvec", dr)
     j = 1j
-
+    timestart1 = time.time() ####
     for m in range (0,b): 
         print "Calculating Momentum Channel:", mlist[m]
         for y in range (0,N):
@@ -59,6 +61,12 @@ def diracham(r,pot,mlist,B):
             else:
                 ens.extend(evals)
         print "Resolving wavefunctions"
+        iplot = []
+        for Eplot in []:#[-0.24, -0.04]:
+            Ei = list(enumerate (w))
+            Ei.sort (lambda x, y: cmp(abs(x[1]- Eplot), abs(y[1]- Eplot)))
+            iplot.append(Ei[0][0])
+        print "iplot:", iplot
         for i in range (0,2*N):
             u = vr[:,i]
             u_up = u[::2]
@@ -71,8 +79,9 @@ def diracham(r,pot,mlist,B):
             modpsi = (abs(u_up)**2 + abs(u_down)**2) / (2 * np.pi * r * dr)
             cdtens[m,:,i] = modpsi[:]
             totmodpsi += modpsi
-            if False: # i >= (N - 2) and i <= (N + 1):
-                if mlist[m] < 0:
+            if i in iplot:
+            #if  i >= (N - 2) and i <= (N + 1):
+                if True: #mlist[m] < 0:
                     print "Plotting state %d" %i
                     figure()
                     plot(r,u_up_real, label='u up real')
@@ -90,6 +99,8 @@ def diracham(r,pot,mlist,B):
     show()
     np.save("cdtens",cdtens)
     np.save("emat",Emat)
+    timeend1 = time.time()
+    print "Time taken:", timeend1 - timestart1
 #    plot(r,totmodpsi*r, label='charge density m %f' %mlist[m])
 #    show()
     return Emat, cdtens
@@ -105,10 +116,11 @@ def DOS(Emat, mlist ,r):
     dostens = np.zeros((c,N0,N))
     doschan = np.zeros((N))
     rmax = r[N0/2 -1.0]
-    gam = np.pi * 0.5 / rmax  
+    gam = np.pi * 0.8 / rmax  
     Emax = 10
     Emin = -Emax
     wf = np.load("cdtens.npy")
+    timestart2 = time.time()
     for i in range (0,N):
         E[i] = Emin + float(i) * (Emax - Emin)/N
     for m in range (0,c):
@@ -131,32 +143,34 @@ def DOS(Emat, mlist ,r):
         for n in range (N0min, N0max):
             dos[:] += dostens[m,n,:]
     dos = 2.0 * dos
-    show()
+#    show()
     dostens = 2.0 * dostens  ####### !!!! 
     
     figure()
-    plot(E, dos, label='%d momentum channels, 50 n' %c) ###!!!! 
+#    plot(E, dos, label='%d momentum channels, 50 n' %c) ###!!!! 
     title('Global Density of States')
     legend()
-    show()
+#    show()
     np.save("dostens", dostens)
     np.save("globdos(pos)", dos)
+    timeend2 = time.time()
+    print "Total time:", timeend2 - timestart2 
     return E, dostens
 
 if __name__ == '__main__':
    N = 300
    rmin = 0.01
    rmax = 25.0
-   B = 1
+   B = 0.03
    r = zeros((N))
    pot = zeros((N))
-   a =10
-#   mlist = zeros((2*a + 1))
-   mlist = np.array(range(0,a))
-#   mlist[0] = 0
+   a = 0
+   mlist = zeros((2*a + 1))
+#   mlist = np.array(range(0,a))
+   mlist[0] = 0
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
-#       pot[i] = -1.0 / 4.0 / r[i]
+       pot[i] = -0.9 / r[i]
    print "Momentum Channels:",  mlist
    np.save("rvec",r)
    Emat, cdtens = diracham(r, pot, mlist,B)
