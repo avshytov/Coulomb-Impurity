@@ -11,8 +11,9 @@ def ldoscalc():
     dostens = np.load("dostens.npy")
     cdtens = np.load("cdtens.npy")
     r = np.load("rvec.npy")
+    info = np.load("EMinfo.npy")
     nm = len(cdtens)
-    nr = len(cdtens[0])
+    nr = len(r) 
     ni = len(dostens[0,0])
     nn = len(dostens[0])
     cdmat = np.zeros((nr,nn))
@@ -25,7 +26,7 @@ def ldoscalc():
         ldosmat += np.dot(cdmat, dosmat)
     ldosmat = np.transpose(ldosmat)
     ldosmat = ldosmat[:,:] 
-    np.save("ldosmat", ldosmat) #-U=05r-N=300-rmax=25",ldosmat)
+    np.save("ldosmat-U=%g-m=%d-B=%g-grid=%d" %(info[0], nm, info[1], nr), ldosmat) 
     return ldosmat
 
 def ldosplot(ldosmat):
@@ -61,7 +62,7 @@ def ldosplot(ldosmat):
         print "gradient of ldost", grad1[0]
         show()
 
-    if True:
+    if False:
         ### Plots charge density
         Emin = 0.1
         Emax = 1.0
@@ -81,24 +82,25 @@ def ldosplot(ldosmat):
         legend()
         show()
 
-    if False:
+    if True:
         print "Plotting slices..."
-        for rs in samps:
+        for rs in [1.0]: #samps:
             si = int (rs / r[(len(r)-1)] * len(r))
             ri = r[si]
             shift = pot[si]
             figure()
             plot (E, ldosmat[:, si], label='LDOS r = %g' % ri)
-            plot (E, ldos0[:, si], label='Free LDOS')
-            plot ((E + shift), ldos0[:,si], label='High E shift')
-            ra = 0.5
-            rb = 1.5
-            ivals = [t[0] for t in enumerate(E) if t[1] < rb and t[1] > ra]
-            xvals = [E[t] for t in ivals]
-            yvals = [ldosmat[t, si] for t in ivals]
-            plot (xvals, yvals, label='slice %f' %si)
-            grad = np.polyfit(xvals, yvals, 1)
-            print grad[0], "for r =", ri 
+#            plot (E, ldos0[:, si], label='Free LDOS')
+#            plot ((E + shift), ldos0[:,si], label='High E shift')
+            if False:
+                ra = 0.5
+                rb = 1.5
+                ivals = [t[0] for t in enumerate(E) if t[1] < rb and t[1] > ra]
+                xvals = [E[t] for t in ivals]
+                yvals = [ldosmat[t, si] for t in ivals]
+                plot (xvals, yvals, label='slice %f' %si)
+                grad = np.polyfit(xvals, yvals, 1)
+                print grad[0], "for r =", ri 
             xlim(-2.5,2.5)
             legend()
         show()
@@ -119,13 +121,13 @@ def ldosplot(ldosmat):
                 nu += nu_m
             plot (E, ldosmat[:, si], label='Simulated r = %g' % ri)
             plot(E, nu) 
-            ra = 0.1
-            rb = 0.5
-            ivals = [t[0] for t in enumerate(E) if t[1] < rb and t[1] > ra]
-            xvals = [E[t] for t in ivals]
-            yvals = [nu[t] for t in ivals]
-            grad = np.polyfit(xvals, yvals, 1)
-            print grad[0], "for theory r =", ri
+           # ra = 0.1
+           # rb = 0.5
+           # ivals = [t[0] for t in enumerate(E) if t[1] < rb and t[1] > ra]
+           # xvals = [E[t] for t in ivals]
+           # yvals = [nu[t] for t in ivals]
+           # grad = np.polyfit(xvals, yvals, 1)
+           # print grad[0], "for theory r =", ri
             xlim(-2.5, 2.5)
             legend()
         show()
