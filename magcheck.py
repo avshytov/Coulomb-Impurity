@@ -14,18 +14,23 @@ rmax = 25.0
 r = np.load("rvec.npy")
 N = len(r)
 pot = zeros((N))
-a = 3
+info = np.zeros((2))
+a = 1
+Ustr = 0.9
+info[0] = Ustr
 #mlist = zeros((2*a + 1))
 
 mlist = np.array(range(0,a))
 #mlist[0] = 0
 for i in range (0,N):
-   pot[i] = -0.7 / r[i]
+   pot[i] = -Ustr / r[i]
 np.save("mlist",mlist)
 np.save("potvec",pot)    
-Bs =  np.arange(0.03,3.0,0.05)
+Bs = [] 
+for Q in range (0,106):
+   Bs.extend([0.03**2 * Q**2])
 samps = [1.0]# [0.25, 0.5, 0.75, 1.0]
-lines = 11
+lines = 21
 allvals = np.zeros((lines,len(Bs), len(samps)))
 timestart = time.time()
 
@@ -34,11 +39,13 @@ for b in range (0, len(Bs)):
     print 'Current time elapsed:', (timeB - timestart)
     B = Bs[b]
     print "B=", B
+    info[1] = B
+    np.save("EMinfo", info)
     Ematp, Ematn, cdtens = diracham(r,pot,mlist,B)
     E, dostens = DOS(Ematp, Ematn, mlist ,r)
     x = E
     ldosmat = ldoscalc()
-    lim = 6
+    lim = 21
     for l in range (0, len(x)):
         if x[l-1] < -lim and x[l] >= - lim:
             lowl = l
@@ -60,7 +67,7 @@ for b in range (0, len(Bs)):
         top = len(peaks) / 2 + lines / 2 + 1
         bot = len(peaks) / 2 - lines / 2
         allvals[:,b,c] = peaks[bot:top:]
-np.save('peakpositions',allvals)
+np.save('peakpositions-Ustr=%g-%dms-grid=%d' %(Ustr, len(mlist), len(r)) ,allvals)
 #print allvals
 timeend = time.time()
 print 'Total time taken:', (timeend - timestart)
@@ -76,13 +83,13 @@ for c in range (0, len(samps)):
 figure()
 for c in range (0, len(samps)):
     for a in range (0,lines):
-        plot(Bs, allvals[a,:,c]**2, '*', label='%d th peak' %a)
-        title('Energies^2 vs. Field: r = %g' %r[samps[c]])
+        plot(np.sqrt(Bs), allvals[a,:,c], '*', label='%d th peak' %a)
+        title('Energies vs. sqrt(Field): r = %g' %r[samps[c]])
 figure()
 for c in range (0, len(samps)):
     for a in range (0,lines):
-        plot(Bs, allvals[a,:,c]**2, label='%d th peak' %a)
-        title('Energies^2 vs. Field: r = %g' %r[samps[c]])
+        plot(np.sqrt(Bs), allvals[a,:,c], label='%d th peak' %a)
+        title('Energies vs. sqrt(Field): r = %g' %r[samps[c]])
 legend()
 show()
 
