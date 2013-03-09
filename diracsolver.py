@@ -99,19 +99,12 @@ def diracham(r,pot,mlist,B0):
                         plot(r,u_down_imag, label='u down imag')
                         legend()
                         title('Momentum Channel %d' %mlist[m])
-                       # figtext(0.2, 0.85, 'Energy state %d' %i) INCORRECT
-                       # figtext(0.2, 0.80, 'Energy = %f' %w[i]) INCORRECT
                     figure()
                     plot(r,totmodpsi,label='charge density m %f' %mlist[m])
                     legend()
-    #    hist(ens, bins=40)
-    #    show()
         np.save("cdtens",cdtens)
-#        np.save("emat",Emat)
         timeend1 = time.time()
         print "Time taken:", timeend1 - timestart1
-        #plot(r,totmodpsi*r, label='charge density m %f' %mlist[m])
-#       show()
     cdtens = cdtensp + cdtensn
     return Ematp, Ematn, cdtens
 
@@ -127,7 +120,7 @@ def DOS(Ematp, Ematn, mlist ,r):
     doschan = np.zeros((N))
     rmax = r[N0/2 -1.0]
     gam = np.pi * 0.8 / rmax  
-    Emax = 10
+    Emax = 24.0
     Emin = -Emax
     wf = np.load("cdtens.npy")
     timestart2 = time.time()
@@ -142,12 +135,12 @@ def DOS(Ematp, Ematn, mlist ,r):
                 print "m = %d"  %mlist[m]
                 print "Eigenvalue:", Emat[n,m]
                 rhoo = cdtens[m,:,n]
-#                figure()
-#                plot(r, rhoo, label='charge density energy=%f' %Emat[n,m])
-#                title('Momentum Channel %d' %mlist[m])
-#                figtext(0.2, 0.85, 'Energy state %d' %n)
-#                legend()
-#                show()
+                figure()
+                plot(r, rhoo, label='charge density energy=%f' %Emat[n,m])
+                title('Momentum Channel %d' %mlist[m])
+                figtext(0.2, 0.85, 'Energy state %d' %n)
+                legend()
+                show()
             for i in range (0,N): 
                 dostens[m,n,i]+=A/(gam**2+(E[i]-Ematp[n,m])**2)**2
                 dostens[m,n,i]+=A/(gam**2+(E[i]-Ematp[n,m])**2)**2
@@ -155,11 +148,6 @@ def DOS(Ematp, Ematn, mlist ,r):
     for m in range (0,c):
         for n in range (N0min, N0max):
             dos[:] += dostens[m,n,:]
-#    figure()
-#    plot(E, dos, label='%d momentum channels, 50 n' %c) ###!!!! 
-#    title('Global Density of States')
-#    legend()
-#    show()
     np.save("dostens", dostens)
     np.save("globdos(pos)", dos)
     timeend2 = time.time()
@@ -174,12 +162,16 @@ if __name__ == '__main__':
    r = zeros((N))
    pot = zeros((N))
    a = 3
+   Ustr = 0.0
+   info = np.zeros((2))
+   info[0] = Ustr
+   info[1] = B0
 #   mlist = zeros((2*a + 1))
    mlist = np.array(range(0,a))
 #   mlist[0] = 0
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
-#       pot[i] = -0.9 / r[i]
+#       pot[i] = -Ustr / r[i]
    print "Momentum Channels:",  mlist
    np.save("rvec",r)
    Ematp, Ematn, cdtens = diracham(r, pot, mlist,B0)
@@ -187,7 +179,7 @@ if __name__ == '__main__':
    np.save("mlist",mlist)
    np.save("Evec",E)
    np.save("potvec",pot)
-
+   np.save("EMinfo", info)
 
 
 
