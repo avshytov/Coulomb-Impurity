@@ -56,7 +56,7 @@ def diracham(r,pot,mlist,B0):
             w, vr =  scipy.linalg.eigh(H)
             if B == B0:
                 Ematp[:,m] = w[:]
-            elif B == (-1.0 * B0):
+            elif B == (-1.0 * B0) and B!= 0.0:
                 Ematn[:,m] = w[:]
             if False:
                 ea = -2
@@ -85,7 +85,7 @@ def diracham(r,pot,mlist,B0):
                 modpsi =(abs(u_up)**2+abs(u_down)**2)/(2*np.pi*r*dr)
                 if B == B0:
                     cdtensp[m,:,i] = modpsi[:]
-                elif B == (-1.0 * B0):
+                elif B == (-1.0 * B0) and B!=0.0:
                     cdtensn[m,:,i] = modpsi[:]
                 totmodpsi += modpsi
                 if i in iplot:
@@ -102,10 +102,10 @@ def diracham(r,pot,mlist,B0):
                     figure()
                     plot(r,totmodpsi,label='charge density m %f' %mlist[m])
                     legend()
-        np.save("cdtens",cdtens)
         timeend1 = time.time()
         print "Time taken:", timeend1 - timestart1
     cdtens = cdtensp + cdtensn
+    np.save("cdtens",cdtens)
     return Ematp, Ematn, cdtens
 
 def DOS(Ematp, Ematn, mlist ,r):
@@ -161,8 +161,8 @@ if __name__ == '__main__':
    B0 = 0.0
    r = zeros((N))
    pot = zeros((N))
-   a = 3
-   Ustr = 0.0
+   a = 1
+   Ustr = 0.9
    info = np.zeros((2))
    info[0] = Ustr
    info[1] = B0
@@ -171,7 +171,7 @@ if __name__ == '__main__':
 #   mlist[0] = 0
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
-#       pot[i] = -Ustr / r[i]
+       pot[i] = -Ustr / r[i]
    print "Momentum Channels:",  mlist
    np.save("rvec",r)
    Ematp, Ematn, cdtens = diracham(r, pot, mlist,B0)
