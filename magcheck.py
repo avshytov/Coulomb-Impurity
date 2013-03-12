@@ -16,10 +16,9 @@ N = len(r)
 pot = zeros((N))
 info = np.zeros((2))
 a = 1
-Ustr = 0.9
+Ustr = 1.3
 info[0] = Ustr
 #mlist = zeros((2*a + 1))
-
 mlist = np.array(range(0,a))
 #mlist[0] = 0
 for i in range (0,N):
@@ -45,6 +44,7 @@ for b in range (0, len(Bs)):
     E, dostens = DOS(Ematp, Ematn, mlist ,r)
     x = E
     ldosmat = ldoscalc()
+#    ldosplot(ldosmat)
     lim = 21
     for l in range (0, len(x)):
         if x[l-1] < -lim and x[l] >= - lim:
