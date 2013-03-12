@@ -30,6 +30,7 @@ def ldoscalc():
     return ldosmat
 
 def ldosplot(ldosmat):
+    info = np.load("EMinfo.npy")
     ldos0 = np.load("ldosmat-U=0-N=300.npy")
     mlist = np.load("mlist.npy")
     cdtens = np.load("cdtens.npy")
@@ -88,7 +89,7 @@ def ldosplot(ldosmat):
             si = int (rs / r[(len(r)-1)] * len(r))
             ri = r[si]
             shift = pot[si]
-            figure()
+#            figure()
             plot (E, ldosmat[:, si], label='LDOS r = %g' % ri)
 #            plot (E, ldos0[:, si], label='Free LDOS')
 #            plot ((E + shift), ldos0[:,si], label='High E shift')
@@ -103,6 +104,8 @@ def ldosplot(ldosmat):
                 print grad[0], "for r =", ri 
             xlim(-2.5,2.5)
             legend()
+            title('LDOS, r=%g, U=%g, B=%g' %(ri, info[0], info[1]))
+            figure() ##!!! Only required for Magcheck loop 10/3/13 
         show()
 
     if False:
