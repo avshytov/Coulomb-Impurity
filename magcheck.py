@@ -68,6 +68,7 @@ for b in range (0, len(Bs)):
         bot = len(peaks) / 2 - lines / 2
         allvals[:,b,c] = peaks[bot:top:]
 np.save('peakpositions-Ustr=%g-%dms-grid=%d' %(Ustr, len(mlist), len(r)) ,allvals)
+np.save('Evec.npy', E)
 #print allvals
 timeend = time.time()
 print 'Total time taken:', (timeend - timestart)
