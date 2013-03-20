@@ -63,12 +63,15 @@ def ldosplot(ldosmat):
         print "gradient of ldost", grad1[0]
         show()
 
-    if False:
+    if True:
         ### Plots charge density
-        Emin = 0.1
+        Elims = np.zeros((2))
+        Emin = 0.0
         Emax = 1.0
-        test = 1.0 / 4.0 / np.pi * (Emax**2 - Emin**2)
-        Etest = vectorize(lambda x: test)(r)
+        Elims[0] = Emin
+        Elims[1] = Emax
+#        test = 1.0 / 4.0 / np.pi * (Emax**2 - Emin**2)
+#        Etest = vectorize(lambda x: test)(r)
         for a in range(0, len(E)):
             if E[a] <= Emin and E[a+1] > Emin:
                 e1min = a
@@ -76,14 +79,15 @@ def ldosplot(ldosmat):
                 e1max = a
         for e1 in range (e1min, e1max):
             cd[:] += ldosmat[e1, :] * (E[e1 + 1] - E[e1])
-        np.save("charge-density-U=0-N=300", cd)
+        np.save("charge-density-U=%g-m=%d-N=%d" %(info[0],nm, len(r)), cd)
         figure()
         plot(r,  cd, label='Charge Density')
-        plot(r, Etest, '--', label='test')
+#        plot(r, Etest, '--', label='test')
+        np.save('Elims', Elims)
         legend()
         show()
 
-    if True:
+    if False:
         print "Plotting slices..."
         for rs in [1.0]: #samps:
             si = int (rs / r[(len(r)-1)] * len(r))
@@ -111,8 +115,9 @@ def ldosplot(ldosmat):
     if False:
         ### Plots slices and calculates gradient
         print "Calculating analytical LDOS"
-        for rs in samps:
-            figure()
+        for rs in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 1.2]: #samps:
+            ldosmat = np.load('ldosmat-U=0-m=10-B=0-grid=%d.npy' %len(r))
+            #figure()
             si = int (rs / r[(len(r)-1)] * len(r))
             ri = r[si]
             kr = abs(E) * ri
