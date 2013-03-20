@@ -18,10 +18,10 @@ def diracham(r,pot,mlist,B0):
     M = np.zeros((2*N,2*N), dtype=complex)
     U = np.zeros((2*N,2*N), dtype=complex)
     Ematp = np.zeros((2*N,b))
-    Ematn = Ematp
+    Ematn = np.zeros((2*N,b))
     cdtens = np.zeros((b,N,2*N))
-    cdtensp = cdtens
-    cdtensn = cdtens
+    cdtensp = np.zeros((b,N,2*N))
+    cdtensn = np.zeros((b,N,2*N))
     psi_up = np.zeros((N))
     psi_down = np.zeros((N))
     modpsi = np.zeros((N))
@@ -69,11 +69,10 @@ def diracham(r,pot,mlist,B0):
                     ens.extend(evals)
             print "Resolving wavefunctions"
             iplot = []
-            for Eplot in []:#[-0.24, -0.04]:
+            for Eplot in [-0.24, -0.04]:
                 Ei = list(enumerate (w))
                 Ei.sort (lambda x, y: cmp(abs(x[1]- Eplot), abs(y[1]- Eplot)))
                 iplot.append(Ei[0][0])
-            print "iplot:", iplot
             for i in range (0,2*N):
                 u = vr[:,i]
                 u_up = u[::2]
@@ -99,11 +98,14 @@ def diracham(r,pot,mlist,B0):
                         plot(r,u_down_imag, label='u down imag')
                         legend()
                         title('Momentum Channel %d' %mlist[m])
-                    figure()
-                    plot(r,totmodpsi,label='charge density m %f' %mlist[m])
-                    legend()
+#                    figure()
+#                    plot(r,totmodpsi,label='charge density m %f' %mlist[m])
+#                    legend()
+#            show()
         timeend1 = time.time()
         print "Time taken:", timeend1 - timestart1
+        if B == 0:
+            break
     cdtens = cdtensp + cdtensn
     np.save("cdtens",cdtens)
     return Ematp, Ematn, cdtens
@@ -123,6 +125,7 @@ def DOS(Ematp, Ematn, mlist ,r):
     Emax = 24.0
     Emin = -Emax
     wf = np.load("cdtens.npy")
+    info = np.load('EMinfo.npy')
     timestart2 = time.time()
     A = 2.0/np.pi*gam**3 
     for i in range (0,N):
@@ -143,11 +146,14 @@ def DOS(Ematp, Ematn, mlist ,r):
                 show()
             for i in range (0,N): 
                 dostens[m,n,i]+=A/(gam**2+(E[i]-Ematp[n,m])**2)**2
-                dostens[m,n,i]+=A/(gam**2+(E[i]-Ematp[n,m])**2)**2
+                if info[1] != 0:
+                    dostens[m,n,i]+=A/(gam**2+(E[i]-Ematn[n,m])**2)**2
  
-    for m in range (0,c):
-        for n in range (N0min, N0max):
-            dos[:] += dostens[m,n,:]
+#    for m in range (0,c):
+#        for n in range (N0min, N0max):
+#            dos[:] += dostens[m,n,:]
+    if info[1] == 0.0:
+        dostens = 2.0 * dostens
     np.save("dostens", dostens)
     np.save("globdos(pos)", dos)
     timeend2 = time.time()
@@ -155,14 +161,14 @@ def DOS(Ematp, Ematn, mlist ,r):
     return E, dostens
 
 if __name__ == '__main__':
-   N = 200
+   N =400
    rmin = 0.01
    rmax = 25.0
    B0 = 0.0
    r = zeros((N))
    pot = zeros((N))
-   a = 1
-   Ustr = 0.9
+   a = 10
+   Ustr = 0.1
    info = np.zeros((2))
    info[0] = Ustr
    info[1] = B0
@@ -171,7 +177,7 @@ if __name__ == '__main__':
 #   mlist[0] = 0
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
-       pot[i] = -Ustr / r[i]
+       pot[i] = -Ustr /np.sqrt(r[i]**2 + r[10]**2)
    print "Momentum Channels:",  mlist
    np.save("rvec",r)
    Ematp, Ematn, cdtens = diracham(r, pot, mlist,B0)
