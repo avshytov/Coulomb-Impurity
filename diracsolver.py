@@ -30,6 +30,7 @@ def diracham(r,pot,mlist,B0):
     dr[1:] = r[1:] - r[0:-1]
     dr[0] = r[1] - r[0]
     np.save("drvec", dr)
+    info = np.load("EMinfo.npy")
     j = 1j
     timestart1 = time.time() ####
 
@@ -107,10 +108,12 @@ def diracham(r,pot,mlist,B0):
         if B == 0:
             break
     cdtens = cdtensp + cdtensn
-    np.save("cdtens",cdtens)
+    np.save("cdtens-U=%g-B=%g-ms=%d-N=%d" %(info[0],B0,b,N),cdtens)
+    np.save("totmodpsi-U=%g-B=%g-ms=%d-N=%d" %(info[0],B0,b,N), totmodpsi)
     return Ematp, Ematn, cdtens
 
 def DOS(Ematp, Ematn, mlist ,r):
+    info = np.load("EMinfo.npy")
     N0 = len(Ematp)
     c = len(mlist)
     N = 4 * N0
@@ -124,8 +127,7 @@ def DOS(Ematp, Ematn, mlist ,r):
     gam = np.pi * 0.8 / rmax  
     Emax = 24.0
     Emin = -Emax
-    wf = np.load("cdtens.npy")
-    info = np.load('EMinfo.npy')
+    wf = np.load("cdtens-U=%g-B=%g-ms=%d-N=%d.npy" %(info[0],B0,len(mlist),len(r)))
     timestart2 = time.time()
     A = 2.0/np.pi*gam**3 
     for i in range (0,N):
@@ -154,30 +156,32 @@ def DOS(Ematp, Ematn, mlist ,r):
 #            dos[:] += dostens[m,n,:]
     if info[1] == 0.0:
         dostens = 2.0 * dostens
-    np.save("dostens", dostens)
+#    np.save("dostens", dostens)
+    np.save("dostens-U=%g-B=%g-ms=%d-N=%d" %(info[0], info[1], c, len(r)), dostens)
     np.save("globdos(pos)", dos)
     timeend2 = time.time()
     print "Total time:", timeend2 - timestart2 
     return E, dostens
 
 if __name__ == '__main__':
-   N =400
+   N = 200
    rmin = 0.01
    rmax = 25.0
-   B0 = 0.0
+   B0 = 0.0 #2.370
    r = zeros((N))
    pot = zeros((N))
    a = 10
-   Ustr = 0.1
+   Ustr =0.0
    info = np.zeros((2))
    info[0] = Ustr
    info[1] = B0
+   np.save("EMinfo", info)
 #   mlist = zeros((2*a + 1))
    mlist = np.array(range(0,a))
-#   mlist[0] = 0
+#   mlist[0] = 1
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
-       pot[i] = -Ustr /np.sqrt(r[i]**2 + r[10]**2)
+       pot[i] = -Ustr# /np.sqrt(r[i]**2 + r[10]**2)
    print "Momentum Channels:",  mlist
    np.save("rvec",r)
    Ematp, Ematn, cdtens = diracham(r, pot, mlist,B0)
@@ -185,7 +189,3 @@ if __name__ == '__main__':
    np.save("mlist",mlist)
    np.save("Evec",E)
    np.save("potvec",pot)
-   np.save("EMinfo", info)
-
-
-
