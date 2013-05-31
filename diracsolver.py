@@ -164,13 +164,13 @@ def DOS(Ematp, Ematn, mlist ,r):
     return E, dostens
 
 if __name__ == '__main__':
-   N = 200
+   N = 400
    rmin = 0.01
    rmax = 25.0
    B0 = 0.0 #2.370
    r = zeros((N))
    pot = zeros((N))
-   a = 10
+   a = 15
    Ustr =0.0
    info = np.zeros((2))
    info[0] = Ustr
@@ -181,7 +181,7 @@ if __name__ == '__main__':
 #   mlist[0] = 1
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
-       pot[i] = -Ustr# /np.sqrt(r[i]**2 + r[10]**2)
+       pot[i] = -Ustr #/np.sqrt(r[i]**2 + r[10]**2)
    print "Momentum Channels:",  mlist
    np.save("rvec",r)
    Ematp, Ematn, cdtens = diracham(r, pot, mlist,B0)

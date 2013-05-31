@@ -44,7 +44,7 @@ def polaris(r, Elims,Ustr,r0):
             return  q * J * U * dPi
         func[a], eps = integrate.quad(f,0,Inf)
     func = func / (2*np.pi)
-    #plot(r, func, label='polarisation operator')
+    plot(r, func, label='polarisation operator')
     return func
 
 
@@ -53,24 +53,24 @@ def drho(r,Elims,Ustr,r0):
     check = np.zeros((len(r)))
     Emax = Elims[1]
     Emin = Elims[0]
-    rho0 = np.load('charge-density-U=0-B=0-m=1-N=%d-E=%g-%g.npy' %(N, Emin, Emax))
+    rho = np.zeros((N))
+    rho0 = np.zeros((N))
+    mrho0 = np.load("mcdtens-U=0-B=0-m=10-grid=%d-E=%g-%g.npy" %(N, Emin, Emax))
     U0 = -1 /np.sqrt(r**2 + r0**2)
     U = Ustr * U0
-    rho = np.load('charge-density-U=%g-B=0-m=1-N=%d-E=%g-%g.npy' %(Ustr,N,Emin,Emax))
+    mrho = np.load("mcdtens-U=%g-B=0-m=10-grid=%d-E=%g-%g.npy" %(Ustr, N, Emin, Emax))
+    
+    for m in range (0,10):
+         rho0[:] += mrho0[:,m,3] 
+         rho[:] += mrho[:,m,3] 
     difft = - (Emax - Emin) * U / (2.0 * np.pi)
     diffs = rho - rho0
-#    figure()
-
-    if False:
-        cdtens0 = np.load("cdtens-U=0-B=0-ms=15-N=%d.npy" %N)
-        cdtensU = np.load("cdtens-U=%g-B=0-ms=15-N=%d.npy" %(Ustr, N))
-
     plot(r, diffs, label='delta rho - sim')
     check = -1.0 / 16  * r0 / (r0**2 + r**2)**(1.5)
-   # plot(r,check, label='check')
     title('U =- %g' %Ustr)
     ylim(0,0.1)
     legend()
+    show()
 #    figure()
 #    loglog(r, diffs, label='delta rho - sim')
 #    loglog(r, difft, label='delta rho - theory')
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     r0 = r[10]
     Elims = np.load('Elims.npy')
     print 'Elims =', Elims
-    Ustr =[0.002] #[-0.025, 0.025]  #[0.001, 0.01, 0.025, 0.05, 0.075, 0.10, 0.2]
+    Ustr =[0.05] #[-0.025, 0.025]  #[0.001, 0.01, 0.025, 0.05, 0.075, 0.10, 0.2]
     ratios = np.zeros((len(r),len(Ustr)))
     for a in range (0,len(Ustr)):
         U = Ustr[a]

@@ -14,7 +14,7 @@ def ldoscalc():
     mlist = np.load("mlist.npy")
     nm = len(mlist)
     nr = len(r)
-    dostens = np.load("dostens.npy" %(info[0], info[1], nm, nr))
+    dostens = np.load("dostens-U=%g-B=%g-ms=%d-N=%d.npy" %(info[0], info[1], nm, nr))
     cdtens = np.load("cdtens-U=%g-B=%g-ms=%d-N=%d.npy" %(info[0], info[1],nm,nr))
     ni = len(dostens[0,0])
     nn = len(dostens[0])
@@ -67,7 +67,7 @@ def ldosplot(ldosmat):
         print "gradient of ldost", grad1[0]
         show()
 
-    if True:
+    if False:
         ### Plots charge density
         Elims = np.zeros((2))
         Emin = 0.0
@@ -130,11 +130,11 @@ def ldosplot(ldosmat):
           #  figure() ##!!! Only required for Magcheck loop 10/3/13 
         show()
 
-    if False:
+    if True:
         ### Plots slices and calculates gradient
         print "Calculating analytical LDOS"
-        for rs in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 1.2]: #samps:
-            ldosmat = np.load('ldosmat-U=0-m=1-B=0-grid=%d.npy' %len(r))
+        for rs in [r[0], r[1], r[2]]:
+            ldosmat = np.load('ldosmat-U=0-m=10-B=0-grid=%d.npy' %len(r))
             #figure()
             si = int (rs / r[(len(r)-1)] * len(r))
             ri = r[si]
@@ -145,8 +145,9 @@ def ldosplot(ldosmat):
                 jm1 = special.jn(abs(mlist[m]+1),kr)
                 nu_m = abs(E) / 2.0 / np.pi * (jm**2 + jm1**2)
                 nu += nu_m
-            plot (E, ldosmat[:, si], label='Simulated r = %g' % ri)
-            plot(E, nu) 
+            plot(E, ldosmat[:, si], label='Simulated r = %g' % ri)
+            plot(E, nu, label="Theoretical LDOS value (sum over m)") 
+            plot(E, abs(E) / np.pi / 2.0, label='Linear DOS')
            # ra = 0.1
            # rb = 0.5
            # ivals = [t[0] for t in enumerate(E) if t[1] < rb and t[1] > ra]
@@ -154,7 +155,6 @@ def ldosplot(ldosmat):
            # yvals = [nu[t] for t in ivals]
            # grad = np.polyfit(xvals, yvals, 1)
            # print grad[0], "for theory r =", ri
-            xlim(-2.5, 2.5)
             legend()
         show()
 
