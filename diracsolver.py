@@ -32,7 +32,7 @@ def diracham(r,pot,mlist,B0):
     np.save("drvec", dr)
     info = np.load("EMinfo.npy")
     j = 1j
-    timestart1 = time.time() ####
+    timestart1 = time.time() 
 
     for B in [B0, -B0]:
         for m in range (0,b): 
@@ -108,8 +108,8 @@ def diracham(r,pot,mlist,B0):
         if B == 0:
             break
     cdtens = cdtensp + cdtensn
-    np.save("cdtens-U=%g-B=%g-ms=%d-N=%d" %(info[0],B0,b,N),cdtens)
-    np.save("totmodpsi-U=%g-B=%g-ms=%d-N=%d" %(info[0],B0,b,N), totmodpsi)
+    np.save("cdtens-cou-U=%g-B=%g-ms=%d-N=%d" %(info[0],B0,b,N),cdtens)
+    np.save("totmodpsi-cou-U=%g-B=%g-ms=%d-N=%d" %(info[0],B0,b,N), totmodpsi)
     return Ematp, Ematn, cdtens
 
 def DOS(Ematp, Ematn, mlist ,r):
@@ -127,7 +127,7 @@ def DOS(Ematp, Ematn, mlist ,r):
     gam = np.pi * 0.8 / rmax  
     Emax = 24.0
     Emin = -Emax
-    wf = np.load("cdtens-U=%g-B=%g-ms=%d-N=%d.npy" %(info[0],B0,len(mlist),len(r)))
+    wf = np.load("cdtens-cou-U=%g-B=%g-ms=%d-N=%d.npy" %(info[0],B0,len(mlist),len(r)))
     timestart2 = time.time()
     A = 2.0/np.pi*gam**3 
     for i in range (0,N):
@@ -156,8 +156,8 @@ def DOS(Ematp, Ematn, mlist ,r):
 #            dos[:] += dostens[m,n,:]
     if info[1] == 0.0:
         dostens = 2.0 * dostens
-#    np.save("dostens", dostens)
-    np.save("dostens-U=%g-B=%g-ms=%d-N=%d" %(info[0], info[1], c, len(r)), dostens)
+    np.save("dostens-cou-U=%g-B=%g-ms=%d-N=%d" 
+            %(info[0], info[1], c, len(r)), dostens)
     np.save("globdos(pos)", dos)
     timeend2 = time.time()
     print "Total time:", timeend2 - timestart2 
@@ -171,7 +171,7 @@ if __name__ == '__main__':
    r = zeros((N))
    pot = zeros((N))
    a = 15
-   Ustr =0.0
+   Ustr = 0.003
    info = np.zeros((2))
    info[0] = Ustr
    info[1] = B0
@@ -181,11 +181,12 @@ if __name__ == '__main__':
 #   mlist[0] = 1
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
-       pot[i] = -Ustr #/np.sqrt(r[i]**2 + r[10]**2)
+       pot[i] = -Ustr /np.sqrt(r[i]**2 + r[16]**2)
    print "Momentum Channels:",  mlist
-   np.save("rvec",r)
+   r0 = r[16]
    Ematp, Ematn, cdtens = diracham(r, pot, mlist,B0)
    E, dostens = DOS(Ematp, Ematn, mlist ,r)
+   np.save("rvec",r)
    np.save("mlist",mlist)
    np.save("Evec",E)
-   np.save("potvec",pot)
+   np.save("potvec-cou-U=%g-grid=%g-r0=%g" %(Ustr, N, r0),pot)
