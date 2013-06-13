@@ -35,8 +35,9 @@ def diracham(r,pot,mlist,B0):
     timestart1 = time.time() 
 
     for B in [B0, -B0]:
-        for m in range (0,b): 
-            print "Calculating Momentum Channel:", mlist[m]
+        for m in mlist: 
+            M[:, :] = 0.0
+            print "Calculating Momentum Channel:", m
             for y in range (0,N):
                 if y == 0:
                     a = r[y+1] - r[y]
@@ -44,12 +45,43 @@ def diracham(r,pot,mlist,B0):
                     P[1,0] = 1.0 * j /a
                 else:
                     a = r[y] - r[y-1]
-                    P[2*y+1,2*y]= 1.0 * j /a
+                    P[2*y+1,2*y]= 1.0 * j /a   ####FIX THIS
                     P[2*y,2*y+1]= -1.0 * j / a
                     P[2*y,2*y-1]= 1.0 * j /a
                     P[2*y-1,2*y]= -1.0 * j / a
-                M[2*y,2*y+1]= -1.0*j*(mlist[m]+(B*r[y]**2/2)+0.5)/r[y]
-                M[2*y+1,2*y]= 1.0* j*(mlist[m]+(B*r[y]**2/2)+0.5)/r[y]
+                # Calculating the m/r term. We split this 
+                # into two steps, to allow for coupling to the 
+                # left and right value of psi_1 --- AVS 
+                if (y != N - 1): 
+                    r_1 = r[y]
+                    r_2 = r[y + 1]
+                    y_next = y + 1
+                    #y_next = y
+                    #r_2 = r[y]
+                else:
+                    r_1 = r[-2]
+                    r_2 = r[-1]
+                    y_next = y
+                r_mid = r_2 #(r_1 + 3.0*r_2)/4.0
+                m_eff = m + 0.5 + B * r_mid**2 / 2.0
+                M[2*y, 2*y_next + 1] += -0.5j * m_eff / r_mid
+                #print "**", y, M[2 * y, 2*y_next + 1], 2*y, 2*y_next + 1
+                M[2*y_next + 1, 2*y] = M[2*y, 2*y_next + 1].conj()
+                #print M[2*y, 2*y_next + 1], M[2 * y_next + 1, 2 * y]
+      
+                if (y < N - 1): 
+                    r_1 = r[y]
+                    r_2 = r[y + 1]
+                else:
+                    r_1 = r[-2]
+                    r_2 = r[-1]
+                r_mid = r_1
+                #r_mid = (3.0 * r_1 + r_2) / 4.0
+                m_eff = m + 0.5 + B * r_mid**2 / 2.0     
+                M[2*y, 2*y + 1] += -0.5j * m_eff / r_mid
+                M[2*y + 1, 2*y] = M[2*y, 2*y + 1].conj()
+                #print M[2 * y, 2*y + 1], 2 * y, 2 * y + 1
+                #print M[2*y, 2*y + 1], M[2 * y + 1, 2 * y]
                 U[2*y, 2*y] = pot[y]
                 U[2*y +1, 2*y +1] = pot[y]
                 H = P + M + U
@@ -108,8 +140,8 @@ def diracham(r,pot,mlist,B0):
         if B == 0:
             break
     cdtens = cdtensp + cdtensn
-    np.save("cdtens-cou-U=%g-B=%g-ms=%d-N=%d" %(info[0],B0,b,N),cdtens)
-    np.save("totmodpsi-cou-U=%g-B=%g-ms=%d-N=%d" %(info[0],B0,b,N), totmodpsi)
+    np.save("cdtens-cn-U=%g-B=%g-ms=%d-N=%d" %(info[0],B0,b,N),cdtens)
+    np.save("totmodpsi-cn-U=%g-B=%g-ms=%d-N=%d" %(info[0],B0,b,N), totmodpsi)
     return Ematp, Ematn, cdtens
 
 def DOS(Ematp, Ematn, mlist ,r):
@@ -124,14 +156,15 @@ def DOS(Ematp, Ematn, mlist ,r):
     dostens = np.zeros((c,N0,N))
     doschan = np.zeros((N))
     rmax = r[N0/2 -1.0]
-    gam = np.pi * 0.8 / rmax  
+    gam = np.pi * 0.8 / rmax
     Emax = 24.0
     Emin = -Emax
-    wf = np.load("cdtens-cou-U=%g-B=%g-ms=%d-N=%d.npy" %(info[0],B0,len(mlist),len(r)))
+    wf = np.load("cdtens-cn-U=%g-B=%g-ms=%d-N=%d.npy" %(info[0],B0,len(mlist),len(r)))
     timestart2 = time.time()
     A = 2.0/np.pi*gam**3 
     for i in range (0,N):
         E[i] = Emin + float(i) * (Emax - Emin)/N
+    print 'Filling Global Density of States'
     for m in range (0,c):
         mlab = mlist[m]
         for n in range (N0min, N0max):
@@ -156,7 +189,46 @@ def DOS(Ematp, Ematn, mlist ,r):
 #            dos[:] += dostens[m,n,:]
     if info[1] == 0.0:
         dostens = 2.0 * dostens
-    np.save("dostens-cou-U=%g-B=%g-ms=%d-N=%d" 
+    np.save("dostens-cn-U=%g-B=%g-ms=%d-N=%d" 
+            %(info[0], info[1], c, len(r)), dostens)
+    np.save("globdos(pos)", dos)
+    timeend2 = time.time()
+    print "Total time:", timeend2 - timestart2 
+    return E, dostens
+def DOS2(Ematp, Ematn, mlist ,r):
+    info = np.load("EMinfo.npy")
+    N0 = len(Ematp)
+    c = len(mlist)
+    N = 4 * N0
+    E = np.zeros((N))
+    N0min = 0
+    N0max = N0
+    dos = np.zeros((N))
+    dostens = np.zeros((c,N0,N))
+    doschan = np.zeros((N))
+    rmax = r[N0/2 -1.0]
+    gam = np.pi * 0.8 / rmax
+    Emax = 24.0
+    Emin = -Emax
+    wf = np.load("cdtens-cn-U=%g-B=%g-ms=%d-N=%d.npy" %(info[0],B0,len(mlist),len(r)))
+    timestart2 = time.time()
+    A = 2.0/np.pi*gam**3 
+    for i in range (0,N):
+        E[i] = Emin + float(i) * (Emax - Emin)/N
+    print 'Filling Global Density of States'
+    for i in range(0, N):
+        X = A / (gam**2 + (E[i] - Ematp)**2)**2
+        if (info[1] != 0):
+            X += A / (gam**2 + (E[i] - Ematn)**2)**2        
+        dostens[:, :, i] += np.transpose(X)
+
+ 
+#    for m in range (0,c):
+#        for n in range (N0min, N0max):
+#            dos[:] += dostens[m,n,:]
+    if info[1] == 0.0:
+        dostens = 2.0 * dostens
+    np.save("dostens-cn-U=%g-B=%g-ms=%d-N=%d" 
             %(info[0], info[1], c, len(r)), dostens)
     np.save("globdos(pos)", dos)
     timeend2 = time.time()
@@ -164,14 +236,18 @@ def DOS(Ematp, Ematn, mlist ,r):
     return E, dostens
 
 if __name__ == '__main__':
+   print "Running Coulomb potential."
    N = 400
-   rmin = 0.01
+   rmin = 0.01 #1.0/16.0
    rmax = 25.0
+   alpha = 0.2
+   alp = 0.1
+   bet = 2.0
    B0 = 0.0 #2.370
    r = zeros((N))
    pot = zeros((N))
-   a = 15
-   Ustr = 0.003
+   a = 5
+   Ustr = 0.0
    info = np.zeros((2))
    info[0] = Ustr
    info[1] = B0
@@ -181,12 +257,14 @@ if __name__ == '__main__':
 #   mlist[0] = 1
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
-       pot[i] = -Ustr /np.sqrt(r[i]**2 + r[16]**2)
-   print "Momentum Channels:",  mlist
    r0 = r[16]
+   pot = -Ustr /np.sqrt(r**2 + r0**2) #Coulomb
+   #pot = -Ustr * np.exp(-alpha * r) #Exponential
+   #pot = -Ustr * (np.exp(-alp*r) - np.exp(-bet*r)) / r #Mixed
+   print "Momentum Channels:",  mlist
    Ematp, Ematn, cdtens = diracham(r, pot, mlist,B0)
-   E, dostens = DOS(Ematp, Ematn, mlist ,r)
+   E, dostens = DOS2(Ematp, Ematn, mlist ,r)
    np.save("rvec",r)
    np.save("mlist",mlist)
    np.save("Evec",E)
-   np.save("potvec-cou-U=%g-grid=%g-r0=%g" %(Ustr, N, r0),pot)
+   np.save("potvec-cn-U=%g-grid=%g-r0=%g" %(Ustr, N, r0),pot)
