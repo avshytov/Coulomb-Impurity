@@ -10,9 +10,9 @@ def mldoscalc():
     mlist = np.load("mlist.npy")
     nm = len(mlist)
     nr = len(r)
-    dostens = np.load("dostens-cou-U=%g-B=%g-ms=%d-N=%d.npy" 
+    dostens = np.load("dostens-cn-U=%g-B=%g-ms=%d-N=%d-dm6.npy" 
                       %(info[0], info[1], nm, nr))
-    cdtens = np.load("cdtens-cou-U=%g-B=%g-ms=%d-N=%d.npy" 
+    cdtens = np.load("cdtens-cn-U=%g-B=%g-ms=%d-N=%d-dm6.npy" 
                      %(info[0], info[1],nm,nr))
     ni = len(dostens[0,0])
     nn = len(dostens[0])
@@ -29,7 +29,7 @@ def mldoscalc():
         mldostens[m,:,:] = ldosmat[:,:]
     print "Saving data: U=", info[0], "ms = ", nm, "B = ", info[1], "grid = ", nr
     print "max, min: ", np.max(mldostens), np.min(mldostens)
-    np.save("mldostens-cou-U=%g-ms=%d-B=%g-grid=%d" 
+    np.save("mldostens-cn-U=%g-ms=%d-B=%g-grid=%d-dm6" 
             %(info[0], nm, info[1], nr), mldostens)
     return mldostens
 
@@ -45,7 +45,7 @@ def mcdplotter(mldostens):
     Elims = [Emin, Emax]
     np.save("Elims",Elims)
     try: 
-        rho0 = np.load("mcdtens-cou-U=0-B=0-m=%d-grid=%d-E=%g-%g.npy" 
+        rho0 = np.load("mcdtens-cn-U=0-B=0-m=%d-grid=%d-E=%g-%g-dm6.npy" 
                        %(nm, nr, Emin, Emax))
     except: 
         print "!!!! cannot load rho0, continue without the actual data."
@@ -76,7 +76,7 @@ def mcdplotter(mldostens):
         rho[:,m] += mldostens[m,emin,:] * 0.5 * h
         rho[:,m] += mldostens[m,emax,:] * 0.5 * h
 
-    np.save("mcdtens-cou-U=%g-B=%g-m=%d-grid=%d-E=%g-%g" 
+    np.save("mcdtens-cn-U=%g-B=%g-m=%d-grid=%d-E=%g-%g-dm6" 
             %(info[0], info[1], nm, nr, Emin, Emax), rho)
     drho = rho - rho0
     if abs(Emax - Emin) < 10e-6:
@@ -84,7 +84,7 @@ def mcdplotter(mldostens):
     else:
         theory = ((abs(Emin) - abs(Emax)) * -info[0]) / 2 / np.pi
     print "Theory =", theory
-    np.save("mdrho-cou-U=%g-B=%g-m=%d-grid=%d-E=%g-%g" 
+    np.save("mdrho-cn-U=%g-B=%g-m=%d-grid=%d-E=%g-%g-dm6" 
             %(info[0], info[1], nm, nr, Emin, Emax), drho)
     if False:
         for m in range (0,nm):
@@ -92,7 +92,7 @@ def mcdplotter(mldostens):
             plot(r,drho[:,m], label='drho')
             title("Charge Density - U=%g, m=%d" %(-info[0], mlist[m]))
             legend()
-    if True:
+    if False:
         for m in range (0,nm):
             drhotot[:] += drho[:,m]
         figure()
@@ -104,9 +104,9 @@ def mcdplotter(mldostens):
         figure()
         plot(r,drhotot[:]/theory)
         title('Ratio Simulation/Theory, U=%g' %(-info[0]))
-    show()
+        show()
 
-    if False:
+    if True:
         rho0tot = np.zeros((nr))
         figure()
         rho_expected = 1.0 / np.pi / 4.0 * (Emax * abs(Emax) - Emin * abs(Emin))
@@ -114,7 +114,7 @@ def mcdplotter(mldostens):
              'k--', label="Expected value")
         for m in range (0,nm):
             rho0tot[:] += rho0[:,m]                 
-        plot(r,rho0tot[:], label="total charge density, U = 0")
+        plot(r,rho0tot[:], label="total charge density, U = 0") ##
         legend()
         show()
 
