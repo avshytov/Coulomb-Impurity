@@ -20,7 +20,7 @@ psi_up = np.zeros((N))
 psi_down = np.zeros((N))
 modpsi = np.zeros((N))
 j = 1j
-m = 1.0
+m = -1.0
 #m = 1.5
 rmin = 0.01
 rmax = 10.0
@@ -28,7 +28,7 @@ t_start = time.time()
 
 for i in range (0,N):
     r[i] = rmin +  i*(rmax-rmin) / N
-    pot[i] = -1/r[i]
+    pot[i] = 0 #-1/r[i]
 
 for y in range (0,N):
     if y == 0:
@@ -44,7 +44,7 @@ for y in range (0,N):
     M[2*y,2*y+1]= -1.0 * j * (m + 0.5) / r[y]
     M[2*y+1,2*y]= 1.0 * j * (m + 0.5) / r[y]
     U[2*y, 2*y] = pot[y]
-    U[2*y +1, 2*y +1] = pot[y]
+    U[2*y +1, 2*y +1] = pot[y] 
 
 H = P + M + U
 t_fill = time.time()
@@ -80,12 +80,15 @@ for i in range (N-5, N+5):
        C1 *= -1
     
     plot(r, (u_up_real / sqrt(r)), label='up r i=%d' %i)
-#    plot(r, (u_up_imag / sqrt(r)), label='up i i=%d' %i)
-#    plot(r, (u_down_real / sqrt(r)), label='down r i=%d' %i)
+    plot(r, (u_up_imag / sqrt(r)), label='up i i=%d' %i)
+    plot(r, (u_down_real / sqrt(r)), label='down r i=%d' %i)
     plot(r, (u_down_imag / sqrt(r)), label='down i i=%d' %i)
+    title('Energy state %f' %i)
+#     figtext(0.2, 0.85, 'Energy state %d' %n)
+#    figure()
     plot(r, modpsi, label='charge dens.')
-#    plot(r, -C1 * jm,  '--', label='J_m')
-#    plot(r, -C2 * jm1, '--', label='J_{m + 1}')    
+    plot(r, -C1 * jm,  '--', label='J_m')
+    plot(r, -C2 * jm1, '--', label='J_{m + 1}')    
     legend()
 show()
 
