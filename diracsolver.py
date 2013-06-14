@@ -35,20 +35,20 @@ def diracham(r,pot,mlist,B0):
     timestart1 = time.time() 
 
     for B in [B0, -B0]:
-        for m in mlist: 
+        for i_m, m in enumerate(mlist): 
             M[:, :] = 0.0
             print "Calculating Momentum Channel:", m
             for y in range (0,N):
                 if y == 0:
                     a = r[y+1] - r[y]
-                    P[0,1] = -1.0 * j / a
-                    P[1,0] = 1.0 * j /a
+                    P[0,1] = -1.0j / a
+                    P[1,0] = 1.0j /a
                 else:
                     a = r[y] - r[y-1]
-                    P[2*y+1,2*y]= 1.0 * j /a   ####FIX THIS
-                    P[2*y,2*y+1]= -1.0 * j / a
-                    P[2*y,2*y-1]= 1.0 * j /a
-                    P[2*y-1,2*y]= -1.0 * j / a
+                    P[2*y+1,2*y]= 1.0j /a   ####FIX THIS
+                    P[2*y,2*y+1]= -1.0j / a
+                    P[2*y,2*y-1]= 1.0j /a
+                    P[2*y-1,2*y]= -1.0j / a
                 # Calculating the m/r term. We split this 
                 # into two steps, to allow for coupling to the 
                 # left and right value of psi_1 --- AVS 
@@ -64,7 +64,7 @@ def diracham(r,pot,mlist,B0):
                     y_next = y
                 r_mid = r_2 #(r_1 + 3.0*r_2)/4.0
                 m_eff = m + 0.5 + B * r_mid**2 / 2.0
-                M[2*y, 2*y_next + 1] += -0.5j * m_eff / r_mid
+                M[2*y, 2*y_next + 1] += -0.0j * m_eff / r_mid
                 #print "**", y, M[2 * y, 2*y_next + 1], 2*y, 2*y_next + 1
                 M[2*y_next + 1, 2*y] = M[2*y, 2*y_next + 1].conj()
                 #print M[2*y, 2*y_next + 1], M[2 * y_next + 1, 2 * y]
@@ -77,8 +77,14 @@ def diracham(r,pot,mlist,B0):
                     r_2 = r[-1]
                 r_mid = r_1
                 #r_mid = (3.0 * r_1 + r_2) / 4.0
-                m_eff = m + 0.5 + B * r_mid**2 / 2.0     
-                M[2*y, 2*y + 1] += -0.5j * m_eff / r_mid
+
+                if y < 6 :
+                    delta_m = np.sqrt(r_1) / (np.sqrt(r_1) + np.sqrt(r_2))
+                else:
+                    delta_m = 0.5
+                m_eff = m + delta_m + B * r_mid**2 / 2.0     
+                #print m_eff, r_mid
+                M[2*y, 2*y + 1] += -1.0j * m_eff / r_mid
                 M[2*y + 1, 2*y] = M[2*y, 2*y + 1].conj()
                 #print M[2 * y, 2*y + 1], 2 * y, 2 * y + 1
                 #print M[2*y, 2*y + 1], M[2 * y + 1, 2 * y]
@@ -88,20 +94,21 @@ def diracham(r,pot,mlist,B0):
             print "diagonalising... "
             w, vr =  scipy.linalg.eigh(H)
             if B == B0:
-                Ematp[:,m] = w[:]
+                Ematp[:,i_m] = w[:]
             elif B == (-1.0 * B0) and B!= 0.0:
-                Ematn[:,m] = w[:]
+                Ematn[:,i_m] = w[:]
             if False:
                 ea = -2
                 eb = 2
                 ivals = [t[0] for t in enumerate(w) if t[1] > ea and t[1] < eb]
                 evals = [w[t] for t in ivals]
-                if mlist[m] == 0:
+                if m == 0:
                     ens = list(evals)
                 else:
                     ens.extend(evals)
             print "Resolving wavefunctions"
             iplot = []
+            plot_wf = True
             for Eplot in [-0.24, -0.04]:
                 Ei = list(enumerate (w))
                 Ei.sort (lambda x, y: cmp(abs(x[1]- Eplot), abs(y[1]- Eplot)))
@@ -116,32 +123,34 @@ def diracham(r,pot,mlist,B0):
                 u_down_imag = u_down.imag
                 modpsi =(abs(u_up)**2+abs(u_down)**2)/(2*np.pi*r*dr)
                 if B == B0:
-                    cdtensp[m,:,i] = modpsi[:]
+                    cdtensp[i_m,:,i] = modpsi[:]
                 elif B == (-1.0 * B0) and B!=0.0:
-                    cdtensn[m,:,i] = modpsi[:]
+                    cdtensn[i_m,:,i] = modpsi[:]
                 totmodpsi += modpsi
-                if i in iplot:
+                if i in iplot and mlist[m]==0:
                 #if  i >= (N - 2) and i <= (N + 1):
-                    if False: #mlist[m] < 0:
+                    if plot_wf: #mlist[m] < 0:
                         print "Plotting state %d" %i
                         figure()
-                        plot(r,u_up_real, label='u up real')
-                        plot(r,u_up_imag, label='u up imag')
-                        plot(r,u_down_real, label='u down real')
-                        plot(r,u_down_imag, label='u down imag')
+                        sqr = np.sqrt(r)
+                        plot(r,u_up_real/sqr, label='psi up real')
+                        plot(r,u_up_imag/sqr, label='psi up imag')
+                        plot(r,u_down_real/sqr, label='psi down real')
+                        plot(r,u_down_imag/sqr, label='psi down imag')
                         legend()
-                        title('Momentum Channel %d' %mlist[m])
+                        title('Momentum Channel %d' % m)
 #                    figure()
 #                    plot(r,totmodpsi,label='charge density m %f' %mlist[m])
 #                    legend()
 #            show()
+            if plot_wf: show()
         timeend1 = time.time()
         print "Time taken:", timeend1 - timestart1
         if B == 0:
             break
     cdtens = cdtensp + cdtensn
-    np.save("cdtens-cn-U=%g-B=%g-ms=%d-N=%d" %(info[0],B0,b,N),cdtens)
-    np.save("totmodpsi-cn-U=%g-B=%g-ms=%d-N=%d" %(info[0],B0,b,N), totmodpsi)
+    np.save("cdtens-cn-U=%g-B=%g-ms=%d-N=%d-dm6" %(info[0],B0,b,N),cdtens)
+    np.save("totmodpsi-cn-U=%g-B=%g-ms=%d-N=%d-dm6" %(info[0],B0,b,N), totmodpsi)
     return Ematp, Ematn, cdtens
 
 def DOS(Ematp, Ematn, mlist ,r):
@@ -159,7 +168,7 @@ def DOS(Ematp, Ematn, mlist ,r):
     gam = np.pi * 0.8 / rmax
     Emax = 24.0
     Emin = -Emax
-    wf = np.load("cdtens-cn-U=%g-B=%g-ms=%d-N=%d.npy" %(info[0],B0,len(mlist),len(r)))
+    wf = np.load("cdtens-cn-U=%g-B=%g-ms=%d-N=%d-dm6.npy" %(info[0],B0,len(mlist),len(r)))
     timestart2 = time.time()
     A = 2.0/np.pi*gam**3 
     for i in range (0,N):
@@ -189,7 +198,7 @@ def DOS(Ematp, Ematn, mlist ,r):
 #            dos[:] += dostens[m,n,:]
     if info[1] == 0.0:
         dostens = 2.0 * dostens
-    np.save("dostens-cn-U=%g-B=%g-ms=%d-N=%d" 
+    np.save("dostens-cn-U=%g-B=%g-ms=%d-N=%d-dm6" 
             %(info[0], info[1], c, len(r)), dostens)
     np.save("globdos(pos)", dos)
     timeend2 = time.time()
@@ -210,13 +219,15 @@ def DOS2(Ematp, Ematn, mlist ,r):
     gam = np.pi * 0.8 / rmax
     Emax = 24.0
     Emin = -Emax
-    wf = np.load("cdtens-cn-U=%g-B=%g-ms=%d-N=%d.npy" %(info[0],B0,len(mlist),len(r)))
+    wf = np.load("cdtens-cn-U=%g-B=%g-ms=%d-N=%d-dm6.npy" %(info[0],B0,len(mlist),len(r)))
     timestart2 = time.time()
     A = 2.0/np.pi*gam**3 
     for i in range (0,N):
         E[i] = Emin + float(i) * (Emax - Emin)/N
     print 'Filling Global Density of States'
     for i in range(0, N):
+        if i % (N/100) == 0:
+            print (100*(i+1))/N, "% complete"
         X = A / (gam**2 + (E[i] - Ematp)**2)**2
         if (info[1] != 0):
             X += A / (gam**2 + (E[i] - Ematn)**2)**2        
@@ -228,7 +239,7 @@ def DOS2(Ematp, Ematn, mlist ,r):
 #            dos[:] += dostens[m,n,:]
     if info[1] == 0.0:
         dostens = 2.0 * dostens
-    np.save("dostens-cn-U=%g-B=%g-ms=%d-N=%d" 
+    np.save("dostens-cn-U=%g-B=%g-ms=%d-N=%d-dm6" 
             %(info[0], info[1], c, len(r)), dostens)
     np.save("globdos(pos)", dos)
     timeend2 = time.time()
@@ -236,31 +247,29 @@ def DOS2(Ematp, Ematn, mlist ,r):
     return E, dostens
 
 if __name__ == '__main__':
+   ### dm terminates at element 6
    print "Running Coulomb potential."
-   N = 400
-   rmin = 0.01 #1.0/16.0
+   N = 800
+   rmin = 0.01
    rmax = 25.0
    alpha = 0.2
-   alp = 0.1
-   bet = 2.0
    B0 = 0.0 #2.370
    r = zeros((N))
    pot = zeros((N))
-   a = 5
+   a = 15
    Ustr = 0.0
    info = np.zeros((2))
    info[0] = Ustr
    info[1] = B0
+   r0 =1.0
    np.save("EMinfo", info)
 #   mlist = zeros((2*a + 1))
    mlist = np.array(range(0,a))
 #   mlist[0] = 1
    for i in range (0,N):
        r[i] = rmin +  i*(rmax-rmin) / N
-   r0 = r[16]
    pot = -Ustr /np.sqrt(r**2 + r0**2) #Coulomb
    #pot = -Ustr * np.exp(-alpha * r) #Exponential
-   #pot = -Ustr * (np.exp(-alp*r) - np.exp(-bet*r)) / r #Mixed
    print "Momentum Channels:",  mlist
    Ematp, Ematn, cdtens = diracham(r, pot, mlist,B0)
    E, dostens = DOS2(Ematp, Ematn, mlist ,r)
