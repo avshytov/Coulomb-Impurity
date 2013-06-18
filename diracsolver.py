@@ -201,7 +201,7 @@ def find_rho(Ev, r, ldos, E_min, E_max):
 
 
 def prepareLDOS(Ev, r, U0, U, mlist, B0, gam):
-    fname = "ldos-U0=%g-N=%d-Mmax=%g.npz" % (U0, len(r), np.max(mlist))
+    fname = "ldos-U0=%g-N=%d-Mmax=%g-B=%g.npz" % (U0, len(r), np.max(mlist), B)
     try:
         data = np.load(fname)
         print "loaded data from", fname
@@ -288,7 +288,7 @@ if __name__ == '__main__':
    
    figure()
    title ("DOS")
-   for i_r, r_i in list(enumerate(r))[0:200:40]:
+   for i_r, r_i in list(enumerate(r))[0:500:100]:
        plot(Ev, ldos[i_r, :], label='r = %g' % r_i)
        plot(Ev, dos_0[i_r, :], '--', label='BESSELS: r = %g' % r_i)
        ivals = [t for t in range(len(Ev)) if abs(Ev[t]) > 1e-2]
@@ -318,7 +318,7 @@ if __name__ == '__main__':
    #show()
    
    E_min = -1.0
-   E_max = -0.0
+   E_max = -0.1
    
    rho = find_rho(Ev, r, ldos, E_min, E_max)
    rho_B = find_rho(Ev, r, dos_0, E_min, E_max)
@@ -332,7 +332,7 @@ if __name__ == '__main__':
    rho_th = (abs(E_max) * E_max - E_min * abs(E_min)) / 4.0 / np.pi
    plot (r, 0*r + rho_th, 'k--', label='Theory')
    legend()
-   show()
+   #show()
    rho_0 = np.array(rho)
    def Uq_Coulomb(q):
        return 2.0 * np.pi / q * np.exp(-q*r0)
@@ -342,7 +342,10 @@ if __name__ == '__main__':
    rho_up   =  polaris_generic(r, E_max, Uq_Coulomb)
    rho_down =  polaris_generic(r, E_min, Uq_Coulomb)
    rho_RPA = rho_up - rho_down
-   rho_bg = rho_down
+   sgn = 1.0
+   if (E_min < 0): sgn = -1
+   rho_bg = -1.0 / 4.0 / np.pi * ((E_min - U) * np.abs(E_min - U) - E_min * abs(E_min)) 
+   #rho_down + 1.0 / 4.0 / np.pi * U**2 * sgn
    
    results = []
   
@@ -357,64 +360,95 @@ if __name__ == '__main__':
        
        rho = find_rho(Ev, r, ldos, E_min, E_max)
        drho = rho - rho_0
-       results.append((U0, drho))
+       rho_bg = 1.0 / 4.0 / np.pi * ((E_min - U) * np.abs(E_min - U) - E_min * abs(E_min))
+       drho_full = drho + rho_bg
+       rho_TF = 1.0 / 4.0 / np.pi * ((E_max - U) * np.abs(E_max - U) - E_max * abs(E_max))
+       results.append((U0, drho, drho_full, rho_TF))
        ivals = [t for t in range(len(r)) if r[t] > 1.0 and r[t] < 10.0]
        y_i = np.array([drho[t]/U0 for t in ivals])
        t_i = np.array([ rho_RPA[t] for t in ivals])
        A_x = sum(y_i * t_i) / sum(t_i**2)
        print "A_x = ", A_x
-       figure()
-       title ("DOS: U0 = %g" % U0)
-       for i_r, r_i in list(enumerate(r))[0:500:50]:
-           plot(Ev, ldos[i_r, :], label='r = %g' % r_i)
-       plot(Ev, np.abs(Ev) / 2.0 / np.pi, 'k--', label='linear')
-       legend()
-   figure()
-   title ("delta rho from the subband")
-   for U0, drho in results:
-       plot (r, drho / U0, label='U0 = %g' % U0)
-   plot (r, rho_RPA, 'k--', label='RPA response')
-   legend()
+       if False:
+          figure()
+          title ("DOS: U0 = %g" % U0)
+          for i_r, r_i in list(enumerate(r))[0:500:50]:
+              plot(Ev, ldos[i_r, :], label='r = %g' % r_i)
+          plot(Ev, np.abs(Ev) / 2.0 / np.pi, 'k--', label='linear')
+          legend()
+       
+   if True:
+      figure()
+      title ("delta rho from the subband")
+      for U0, drho, drho_full, rho_TF in results:
+          plot (r, drho / U0, label='U0 = %g' % U0)
+      plot (r, rho_RPA, 'k--', label='RPA response')
+      legend()
    
-   figure()
-   title ("delta rho from the band: log-log")
-   for U0, drho in results:
-       loglog (r, abs(drho / U0), label='U0 = %g' % U0)
-   loglog (r, abs(rho_RPA), 'k--', label='RPA response')
-   legend()    
+   if True:
+      figure()
+      title ("delta rho from the band: log-log")
+      for U0, drho, drho_full, rho_TF in results:
+          loglog (r, abs(drho / U0), label='U0 = %g' % U0)
+      loglog (r, abs(rho_RPA), 'k--', label='RPA response')
+      legend()    
    #show() 
    
-   figure()
-   title ("total delta rho")
-   for U0, drho in results:
-       rho_full = drho/U0 + rho_bg
-       plot (r, rho_full, label="U_0 = %g" % U0)
-   plot (r, rho_up, 'k--', label='RPA')
-   legend()
+   if False:
+      figure()
+      title ("total delta rho")
+      for U0, drho, drho_full, rho_TF in results:
+          plot (r, drho_full, label="U_0 = %g" % U0)
+          #plot (r, rho_TF, '--', label='TF, U_0 = %g' % U0)
+      plot (r, rho_up, 'k--', label='RPA')
+      legend()
    
-   figure()
-   title ("total delta rho: log-log")
-   for U0, drho in results:
-       rho_full = drho/U0 + rho_bg
-       loglog (r, np.abs(rho_full), label="U_0 = %g" % U0)
-   loglog (r, np.abs(rho_up), 'k--', label='RPA')
-   loglog (r, 1.0 / r, 'g--', label='1/r')
-   loglog (r, 0.5/np.pi**2 / r**2, 'r--', label='1/r^2')
-   legend()
+   if True:
+      figure()
+      title ("total delta rho: log-log")
+      for U0, drho, drho_full, rho_TF in results:
+          loglog (r, np.abs(drho_full), label="U_0 = %g" % U0)
+          #loglog (r, np.abs(rho_TF), '--', label="TF, U_0 = %g" % U0)
+      loglog (r, np.abs(rho_up), 'k--', label='RPA')
+      loglog (r, 1.0 / r, 'g--', label='1/r')
+      loglog (r, 1.0/np.pi**2 / r**2, 'r--', label='1/r^2')
+      legend()
    
-   figure()
-   title ("nonlinear rho")
-   for U0, drho in results:
-       plot (r, drho / U0 - rho_RPA, label='U0 = %g' % U0)
-   legend()    
+   if False:
+      figure()
+      title ("nonlinear rho")
+      for U0, drho, drho_full, rho_TF in results:
+          plot (r, drho / U0 - rho_RPA, label='U0 = %g' % U0)
+      legend()    
+
    
-   figure()
-   title ("nonlinear rho: log-log")
-   for U0, drho in results:
-       loglog (r, abs(drho / U0 - rho_RPA), label='U0 = %g' % U0)
-   loglog (r, 1/r, 'k--', label='1/r')
-   loglog (r, 1/r**2, 'r--', label='1/r^2')
-   legend()    
+   if False:
+      figure()
+      title ("nonlinear rho: log-log")
+      for U0, drho, drho_full, rho_TF in results:
+          loglog (r, abs(drho / U0 - rho_RPA), label='U0 = %g' % U0)
+      loglog (r, 1/r, 'k--', label='1/r')
+      loglog (r, 1/r**2, 'r--', label='1/r^2')
+      legend()    
+      
+   if False:
+      for U0, drho, drho_full, rho_TF in results:
+          figure()
+          title("Band contribution, U0 = %g" % U0)
+          plot (r, drho, label='sim')
+          plot (r, rho_RPA * U0, label='RPA')
+          plot (r, rho_TF - rho_bg, label='TF')
+          legend()
+   if True:
+      for U0, drho, drho_full, rho_TF in results:
+          figure()
+          rho_bg = drho_full - drho
+          title("Total density, U0 = %g" % U0)
+          plot (r, drho_full, label='sim')
+          plot (r, rho_up * U0, label='RPA + bg')
+          #rho_bg = drho_full - drho
+          plot (r, rho_TF, label='TF')
+          legend()
    
    show()
    
