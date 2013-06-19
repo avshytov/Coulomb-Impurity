@@ -340,7 +340,7 @@ def test_ode():
     U = 0.0 * r + 0.1
     E = 1.0
     m = 0.0
-    rho = solve_ode (E, r, U, m)
+    rho = solve_ode (E, r, U, m, 9.0)
     rho_0 = special.jn(m, E * r - r * U)**2 + special.jn(m + 1, E * r - r * U)**2
     figure()
     plot (r, rho, label="ode")
