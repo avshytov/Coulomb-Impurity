@@ -181,6 +181,16 @@ def diracLDOS(Ev, r, U, mlist, B, gam):
     #LDOS = dos_bg(0, 100, Ev, r)
     return LDOS
 
+def nFermi(E, E_F, T):
+    xi = np.exp(-abs(E - E_F) / T)
+    if (E > E_F): 
+        return xi / (1.0 + xi)
+    return 1.0 / (1.0 + xi)
+
+def find_rho2(E, density, r, Emin, Emax, T):
+    nf = np.vectorize(lambda x: nFermi(x, Emax, T) - nFermi(x, Emin, T))(E)
+    print np.shape(nf), np.shape(density)
+    return np.dot(density, nf)
     
 def find_rho(Ev, r, ldos, E_min, E_max):
     i_max = (np.abs(Ev - E_max)).argmin()
@@ -199,9 +209,56 @@ def find_rho(Ev, r, ldos, E_min, E_max):
     
     return s * h
 
+def prepareSolution(r, U0, U, m, B0):
+    fname = "solution-U0=%g-N=%d-m=%d-B=%g.npz" % (U0, len(r), m, B0)
+    try:
+        data = np.load(fname)
+        print "loaded data from", fname
+        print "check Ev"
+        #print 'Ev = ', Ev, 'data = ', data['Ev']
+        #print 'diff = ', Ev - data['Ev']
+        #assert norm(Ev - data['Ev']) < 1e-8, "Ev are different"
+        #print "check r"
+        assert norm(r - data['r']) < 1e-8, "r vectors are different"
+        #print "check U"
+        assert norm(U - data['U']) < 1e-8, "U vectors are different"
+        #print "check mlist"
+        assert norm(m - data['m']) < 1e-8, "m lists are different"
+        #print "check B"
+        assert abs(B0 - data['B']) < 1e-4, "B values are different"
+        print "check gamma"
+        #assert abs(gam - data['gam']) < 1e-6, "gamma values are different"
+        print "OK, return precalculated ldos"
+        return data['E'], data['d']
+    except:
+        import traceback
+        traceback.print_exc()
+        print "cannot load data from file", fname, "recalculating"
+        E, d = solveDirac(r, U, m, B0)
+        np.savez(fname, E=E, r=r, d=d, U=U, m=m, B=B0)
+        return E, d    
+
+def getDensity(r, U0, U, mlist, B, Emin, Emax, T):
+    rho = np.zeros((len(r)))
+    for i_m, m in enumerate(mlist): 
+        Bwvals = [(B, 1.0), (-B, 1.0)]
+        if (abs(B) < 1e-2 * 1.0 / np.max(r)**2): # magnetic length too large
+            Bwvals = [(0.0, 2.0)]
+        
+        for Bvalue, weight in Bwvals:
+            E, d = prepareSolution(r, U0, U, m, Bvalue)
+            rho += weight * find_rho2(E, d, r, Emin, Emax, T)
+            #for i in range(N_e):
+            #    
+            #    #X = A / (gam**2 + (Ev[i] - E)**2)**2       
+            #    #X = np.exp(-(Ev[i] - E)**2/gam**2) * np.sqrt(1.0/np.pi)/gam; 
+            #    #LDOS[:, i] += weight * np.dot(d, X)
+    #LDOS += dos_bg(np.max(mlist) + 1, 100, Ev, r)
+    #LDOS = dos_bg(0, 100, Ev, r)
+    return rho
 
 def prepareLDOS(Ev, r, U0, U, mlist, B0, gam):
-    fname = "ldos-U0=%g-N=%d-Mmax=%g-B=%g.npz" % (U0, len(r), np.max(mlist), B)
+    fname = "ldos-U0=%g-N=%d-Mmax=%g-B=%g.npz" % (U0, len(r), np.max(mlist), B0)
     try:
         data = np.load(fname)
         print "loaded data from", fname
@@ -238,8 +295,62 @@ def graft(E_cut, Ev, r, ldos, r2, ldos2):
            spl = splrep (xvals, yvals)
            ldos[:, i] = splev(r, spl)
     
+def solve_ode(E, r, U, m, r_match):
+   psi1 = np.zeros(shape(r), dtype=complex)
+   psi2 = np.zeros(shape(r), dtype=complex)
+   def psidot(psi1x, psi2x, x, Ux):
+        psi1d = m / x * psi1x - 1j * (E - Ux) * psi2x 
+        psi2d =  -(m + 1) / x * psi2x - 1j * (E - Ux) * psi1x
+        print psi1d, psi2d
+        return psi1d, psi2d
+   r0 =r[0]
+   E0 = E - U[0]   
+   psi1[0] =      special.jn (m, E0 * r0)
+   psi2[0] = 1j * special.jn(m + 1, E0 * r0)
+   
+   for i in range(1, len(r)):
+       psi1p, psi2p = psi1[i - 1], psi2[i - 1]
+       print psi1p, psi2p, special.jn(m, E * r[i - 1]), special.jn(m + 1, E * r[i  - 1])
+       dr = r[i] - r[i - 1]
+       ra = r[i - 1]
+       rb = r[i - 1] + 0.5 * dr
+       rc = rb
+       rd = r[i]
+       Ua = U[i - 1]
+       Ub = 0.5 * (U[i - 1] + U[i])
+       Uc = Ub
+       Ud = U[i]
+       psi1a, psi2a = psidot (psi1p, psi2p, ra, Ua)
+       psi1b, psi2b = psidot (psi1p + 0.5 * dr * psi1a, psi2p + 0.5 * dr * psi2a, rb, Ub)
+       psi1c, psi2c = psidot (psi1p + 0.5 * dr * psi1b, psi2p + 0.5 * dr * psi2b, rc, Uc)
+       psi1d, psi2d = psidot (psi1p + dr * psi1c, psi2p + dr * psi2c, rd, Ud)
+       
+       psi1n = psi1p + dr * (psi1a + 2.0 * psi1b + 2.0 * psi1c + psi1d) / 6.0
+       psi2n = psi2p + dr * (psi2a + 2.0 * psi2b + 2.0 * psi2c + psi2d) / 6.0
+       
+       psi1[i], psi2[i] = psi1n, psi2n
+       print "new: ", psi1n, psi2n
+   
+   rho = np.abs(psi1)**2 + np.abs(psi2)**2    
+   print rho
+   return rho
+
+def test_ode():
+    r = np.arange(0.03, 10.0, 0.03)
+    U = 0.0 * r + 0.1
+    E = 1.0
+    m = 0.0
+    rho = solve_ode (E, r, U, m)
+    rho_0 = special.jn(m, E * r - r * U)**2 + special.jn(m + 1, E * r - r * U)**2
+    figure()
+    plot (r, rho, label="ode")
+    plot (r, rho_0, label="bessel")
+    legend()
+    show ()
+    
 if __name__ == '__main__':
    ### dm terminates at element 6
+   test_ode()
    print "Running Coulomb potential."
    N = 1000
    rmin  = 0.01
@@ -318,10 +429,12 @@ if __name__ == '__main__':
    #show()
    
    E_min = -1.0
-   E_max = -0.1
+   E_max = -0.0
+   T = 3e-2
    
    rho = find_rho(Ev, r, ldos, E_min, E_max)
    rho_B = find_rho(Ev, r, dos_0, E_min, E_max)
+   rho_1 = getDensity(r, 0.0, 0.0*r, mlist, B0, E_min, E_max, T)
    
    #show()
    
@@ -329,11 +442,13 @@ if __name__ == '__main__':
    title("no potential, density in the band [%g, %g]" % (E_min, E_max))
    plot (r, rho, label='simulation')
    plot (r, rho_B, label='BESSEL')
+   plot (r, rho_1, label='rho from w.f.')
    rho_th = (abs(E_max) * E_max - E_min * abs(E_min)) / 4.0 / np.pi
    plot (r, 0*r + rho_th, 'k--', label='Theory')
    legend()
    #show()
    rho_0 = np.array(rho)
+   rho_wf_0 = np.array(rho_1)
    def Uq_Coulomb(q):
        return 2.0 * np.pi / q * np.exp(-q*r0)
    from denscheck import polaris_generic
@@ -359,11 +474,13 @@ if __name__ == '__main__':
        graft(E_cut, Ev, r, ldos, r2, ldos2)
        
        rho = find_rho(Ev, r, ldos, E_min, E_max)
+       rho_1 = getDensity(r, U0, U, mlist, B0, E_min, E_max, T)
        drho = rho - rho_0
        rho_bg = 1.0 / 4.0 / np.pi * ((E_min - U) * np.abs(E_min - U) - E_min * abs(E_min))
        drho_full = drho + rho_bg
        rho_TF = 1.0 / 4.0 / np.pi * ((E_max - U) * np.abs(E_max - U) - E_max * abs(E_max))
-       results.append((U0, drho, drho_full, rho_TF))
+       drho_wf = rho_1 - rho_wf_0
+       results.append((U0, drho, drho_full, rho_TF, drho_wf))
        ivals = [t for t in range(len(r)) if r[t] > 1.0 and r[t] < 10.0]
        y_i = np.array([drho[t]/U0 for t in ivals])
        t_i = np.array([ rho_RPA[t] for t in ivals])
@@ -380,7 +497,7 @@ if __name__ == '__main__':
    if True:
       figure()
       title ("delta rho from the subband")
-      for U0, drho, drho_full, rho_TF in results:
+      for U0, drho, drho_full, rho_TF, drho_wf in results:
           plot (r, drho / U0, label='U0 = %g' % U0)
       plot (r, rho_RPA, 'k--', label='RPA response')
       legend()
@@ -388,7 +505,7 @@ if __name__ == '__main__':
    if True:
       figure()
       title ("delta rho from the band: log-log")
-      for U0, drho, drho_full, rho_TF in results:
+      for U0, drho, drho_full, rho_TF, drho_wf in results:
           loglog (r, abs(drho / U0), label='U0 = %g' % U0)
       loglog (r, abs(rho_RPA), 'k--', label='RPA response')
       legend()    
@@ -397,7 +514,7 @@ if __name__ == '__main__':
    if False:
       figure()
       title ("total delta rho")
-      for U0, drho, drho_full, rho_TF in results:
+      for U0, drho, drho_full, rho_TF, drho_wf in results:
           plot (r, drho_full, label="U_0 = %g" % U0)
           #plot (r, rho_TF, '--', label='TF, U_0 = %g' % U0)
       plot (r, rho_up, 'k--', label='RPA')
@@ -406,7 +523,7 @@ if __name__ == '__main__':
    if True:
       figure()
       title ("total delta rho: log-log")
-      for U0, drho, drho_full, rho_TF in results:
+      for U0, drho, drho_full, rho_TF, drho_wf in results:
           loglog (r, np.abs(drho_full), label="U_0 = %g" % U0)
           #loglog (r, np.abs(rho_TF), '--', label="TF, U_0 = %g" % U0)
       loglog (r, np.abs(rho_up), 'k--', label='RPA')
@@ -417,7 +534,7 @@ if __name__ == '__main__':
    if False:
       figure()
       title ("nonlinear rho")
-      for U0, drho, drho_full, rho_TF in results:
+      for U0, drho, drho_full, rho_TF, drho_wf in results:
           plot (r, drho / U0 - rho_RPA, label='U0 = %g' % U0)
       legend()    
 
@@ -425,27 +542,29 @@ if __name__ == '__main__':
    if False:
       figure()
       title ("nonlinear rho: log-log")
-      for U0, drho, drho_full, rho_TF in results:
+      for U0, drho, drho_full, rho_TF, drho_wf in results:
           loglog (r, abs(drho / U0 - rho_RPA), label='U0 = %g' % U0)
       loglog (r, 1/r, 'k--', label='1/r')
       loglog (r, 1/r**2, 'r--', label='1/r^2')
       legend()    
       
-   if False:
-      for U0, drho, drho_full, rho_TF in results:
+   if True:
+      for U0, drho, drho_full, rho_TF, drho_wf in results:
           figure()
           title("Band contribution, U0 = %g" % U0)
           plot (r, drho, label='sim')
           plot (r, rho_RPA * U0, label='RPA')
           plot (r, rho_TF - rho_bg, label='TF')
+          plot (r, drho_wf, label='from w.f.')
           legend()
-   if True:
-      for U0, drho, drho_full, rho_TF in results:
+   if False:
+      for U0, drho, drho_full, rho_TF, drho_wf in results:
           figure()
           rho_bg = drho_full - drho
           title("Total density, U0 = %g" % U0)
           plot (r, drho_full, label='sim')
           plot (r, rho_up * U0, label='RPA + bg')
+          plot (r, drho_wf + rho_bg, label='from wf')
           #rho_bg = drho_full - drho
           plot (r, rho_TF, label='TF')
           legend()
