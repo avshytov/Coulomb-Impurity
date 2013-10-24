@@ -350,13 +350,13 @@ def test_ode():
     
 if __name__ == '__main__':
    ### dm terminates at element 6
-   test_ode()
+#   test_ode()
    print "Running Coulomb potential."
    N = 1000
    rmin  = 0.01
    rmax  = 25.0
    Mmax  = 15 
-   Mmax2 = 15 
+   Mmax2 = 15
    
    N2 = 500
    rmax2 = 200.0
@@ -423,9 +423,6 @@ if __name__ == '__main__':
    print "A_x = ", A_x
    #plot (Ev, np.abs(Ev) / 2.0 / np.pi * A_x, 'r--', label='linear corrected')
    legend()
-
-   
-   
    #show()
    
    E_min = -1.0
@@ -451,6 +448,7 @@ if __name__ == '__main__':
    rho_wf_0 = np.array(rho_1)
    def Uq_Coulomb(q):
        return 2.0 * np.pi / q * np.exp(-q*r0)
+   
    from denscheck import polaris_generic
    #from rpakernel import kernel as rpa_kernel
    #K_RPA = rpa_kernel(r, mlist)
@@ -463,23 +461,45 @@ if __name__ == '__main__':
    #rho_down + 1.0 / 4.0 / np.pi * U**2 * sgn
    
    results = []
-  
-   for U0 in [0.01, 0.03, 0.05, 0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4]:
-   #for U0 in [0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4]:
-       U  = -U0 /np.sqrt(r**2 + r0**2) #Coulomb
-       U2 = -U0 /np.sqrt(r2**2 + r0**2) #Coulomb
+
+   def Uvals(Beta, rvals):
+       return -Beta /np.sqrt(rvals**2 + r0**2) #Coulomb
+
+   def highm(Ef, r, Mmax, U0):
+       Jsum = np.zeros((len(r)))
+       #Efr = Ef + Uvals(U0,r)/2.0
+       for i in range (-Mmax, Mmax+1):
+           Jsum += 2.0 * (special.jn(i,(Ef*r)))**2
+       drhohm = 2.0 - Jsum
+       drhohm += (special.jn(-Mmax,(Ef*r)))**2
+       drhohm -= (special.jn(1+Mmax,(Ef*r)))**2
+       drhohm *= - abs(Ef) / 4.0 / np.pi * Uvals(U0,r)
+       return drhohm
+         
+
+   Ustrengths = [-0.5, -0.45, -0.4, -0.35, -0.3, -0.25, -0.2, -0.15, -0.1,
+                 -0.09, -0.08, -0.07, -0.06, -0.05, -0.04, -0.03, -0.02, -0.01,
+                 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09,
+                 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
+#   np.save('Ustrengths', Ustrengths)
+   for U0 in Ustrengths:
+       U = Uvals(U0, r)
+       U2 = Uvals(U0, r2)
+       #U2 = -U0 /np.sqrt(r2**2 + r0**2) #Coulomb
        print "do: ", U0
        ldos  = prepareLDOS(Ev, r,  U0, U,  mlist,  B0, gam)
        ldos2 = prepareLDOS(Ev, r2, U0, U2, mlist2, B0, gam2)
        graft(E_cut, Ev, r, ldos, r2, ldos2)
-       
+       F = 1.01340014 + 0.05991426 / np.sqrt(N) + 7.12091516 / N #### Correction
        rho = find_rho(Ev, r, ldos, E_min, E_max)
        rho_1 = getDensity(r, U0, U, mlist, B0, E_min, E_max, T)
-       drho = rho - rho_0
+       rho_comp = 1.0 / (np.sqrt(r0**2 + r**2))**3 / 16.0
+       drho = (rho - rho_0) * F
        rho_bg = 1.0 / 4.0 / np.pi * ((E_min - U) * np.abs(E_min - U) - E_min * abs(E_min))
-       drho_full = drho + rho_bg
+       drho_full =  drho + rho_bg 
        rho_TF = 1.0 / 4.0 / np.pi * ((E_max - U) * np.abs(E_max - U) - E_max * abs(E_max))
        drho_wf = rho_1 - rho_wf_0
+       #drhohmgen = highm(E_max,r,mlist[-1]) - highm(E_min,r,mlist[-1]) 
        results.append((U0, drho, drho_full, rho_TF, drho_wf))
        ivals = [t for t in range(len(r)) if r[t] > 1.0 and r[t] < 10.0]
        y_i = np.array([drho[t]/U0 for t in ivals])
@@ -493,71 +513,107 @@ if __name__ == '__main__':
               plot(Ev, ldos[i_r, :], label='r = %g' % r_i)
           plot(Ev, np.abs(Ev) / 2.0 / np.pi, 'k--', label='linear')
           legend()
-       
-   if True:
+    
+          
+   if False:
       figure()
-      title ("delta rho from the subband")
+      title ("delta rho from the band")
       for U0, drho, drho_full, rho_TF, drho_wf in results:
-          plot (r, drho / U0, label='U0 = %g' % U0)
+          #plot (r, drho / U0, label='U0 = %g' % U0)
+          plot (r, drho / U0,  label='Corrected, U0 = %g' % U0)
       plot (r, rho_RPA, 'k--', label='RPA response')
       legend()
    
-   if True:
+   if False:
       figure()
       title ("delta rho from the band: log-log")
       for U0, drho, drho_full, rho_TF, drho_wf in results:
-          loglog (r, abs(drho / U0), label='U0 = %g' % U0)
+          loglog (r, abs(drho / U0), label='Corrected, U0 = %g' % U0)
       loglog (r, abs(rho_RPA), 'k--', label='RPA response')
+      loglog(r, 0.08/r, 'b--', label='1/r')
       legend()    
-   #show() 
    
    if False:
+      figure()
+      title ("ratio of RPA / delta rho from the band")
+      for U0, drho, drho_full, rho_TF, drho_wf in results:
+          plot (r, (drho / U0) / rho_RPA, label='U0 = %g' % U0)
+      legend()
+
+      #show() 
+   
+   if False: 
       figure()
       title ("total delta rho")
       for U0, drho, drho_full, rho_TF, drho_wf in results:
           plot (r, drho_full, label="U_0 = %g" % U0)
-          #plot (r, rho_TF, '--', label='TF, U_0 = %g' % U0)
+          plot (r, rho_TF, '--', label='TF, U_0 = %g' % U0)
       plot (r, rho_up, 'k--', label='RPA')
       legend()
    
-   if True:
+   if False:
       figure()
       title ("total delta rho: log-log")
       for U0, drho, drho_full, rho_TF, drho_wf in results:
           loglog (r, np.abs(drho_full), label="U_0 = %g" % U0)
-          #loglog (r, np.abs(rho_TF), '--', label="TF, U_0 = %g" % U0)
+          loglog (r, np.abs(rho_TF), '--', label="TF, U_0 = %g" % U0)
       loglog (r, np.abs(rho_up), 'k--', label='RPA')
       loglog (r, 1.0 / r, 'g--', label='1/r')
       loglog (r, 1.0/np.pi**2 / r**2, 'r--', label='1/r^2')
       legend()
    
-   if False:
-      figure()
-      title ("nonlinear rho")
+   if True: ##
+#      drhomat = []
       for U0, drho, drho_full, rho_TF, drho_wf in results:
-          plot (r, drho / U0 - rho_RPA, label='U0 = %g' % U0)
-      legend()    
+          figure()
+          title ('Total non-linear rho U0=%g' %U0)
+          drhotot = drho + U0*rho_down - Uvals(U0,r)**2 / 4.0/np.pi 
+          drhohm = highm(E_max, r, mlist[-1], U0)
+          drhohm -= highm(E_min, r, mlist[-1], U0)
+          title('Different m contributions')
+          plot(r,drhotot, label='low m')
+          plot(r,-drhohm, label='high m')
+          figure()
+          drhotot += drhohm
+#          drhomat.append(drhotot)
+          plot (r, drhotot, label='sim')
+          plot(r, U0*rho_comp, 'k--', label='full RPA')
+          legend() 
+#      np.save('drhomat', drhomat)
 
-   
    if False:
+      for U0, drho, drho_full, rho_TF, drho_wf in results:
+          figure()
+          title ('Total non-linear rho loglog U0=%g' %U0)
+          drhotot = drho + U0*rho_down - Uvals(U0,r)**2 / 4.0/np.pi
+          drhohm = highm(E_max, r, mlist[-1], U0)
+          drhohm -= highm(E_min, r, mlist[-1], U0)
+          drhotot += drhohm
+          loglog(r, abs(drhotot), label='sim')
+          plot(r, abs(U0*rho_comp), 'k--', label='full RPA')
+          legend()
+          
+   if False: ##
       figure()
       title ("nonlinear rho: log-log")
       for U0, drho, drho_full, rho_TF, drho_wf in results:
-          loglog (r, abs(drho / U0 - rho_RPA), label='U0 = %g' % U0)
-      loglog (r, 1/r, 'k--', label='1/r')
-      loglog (r, 1/r**2, 'r--', label='1/r^2')
+          loglog (r, abs( drho + rho_down*U0), label='U0 = %g' % U0)
+          loglog (r, (Uvals(U0, r)**2 / (np.pi * 4.0)), 'k--', label='TF theory')
+      loglog (r, 0.01/r, 'k--', label='1/r')
+      loglog (r, 0.01/r**2, 'r--', label='1/r^2')
       legend()    
       
-   if True:
+   if False:
       for U0, drho, drho_full, rho_TF, drho_wf in results:
           figure()
           title("Band contribution, U0 = %g" % U0)
           plot (r, drho, label='sim')
-          plot (r, rho_RPA * U0, label='RPA')
+          plot (r, rho_RPA * U0 , label='RPA')
           plot (r, rho_TF - rho_bg, label='TF')
           plot (r, drho_wf, label='from w.f.')
           legend()
-   if False:
+
+   if False: ##
       for U0, drho, drho_full, rho_TF, drho_wf in results:
           figure()
           rho_bg = drho_full - drho
@@ -565,14 +621,172 @@ if __name__ == '__main__':
           plot (r, drho_full, label='sim')
           plot (r, rho_up * U0, label='RPA + bg')
           plot (r, drho_wf + rho_bg, label='from wf')
-          #rho_bg = drho_full - drho
           plot (r, rho_TF, label='TF')
           legend()
    
+   if False:
+       for U0, drho, drho_full, rho_TF, drho_wf in results:
+           figure()
+           title('Residue of total charge density, U0 = %g' %U0)
+           TF =  Uvals(U0,r)**2 / (4.0*np.pi)
+           res = drho - (rho_RPA * U0)
+           plot(r, res, label='Residue sim-RPA')
+           plot(r, TF, label='TF Theory')
+           legend()
+           figure()
+           title('loglog Residue of total charge density, U0 = %g' %U0)
+           loglog(r, abs(res), label='residue')
+           loglog(r, TF, label='TF Theory')
+           N_match = N / 2
+           C_1 = r[N_match] * abs(res[N_match])
+           C_2 = r[N_match]**2 * abs(res[N_match])
+           loglog (r, C_1 * 1/r, 'k--', label='1/r')
+           loglog (r, C_2 / r**2, 'r--', label='1/r^2')
+           legend()
+
+   if True:
+       imin = 0
+       imax = 400
+       rmin = r[imin]
+       rmax = r[imax]
+       dr = r[imin+1]-r[imin]
+       Ugrid = []
+       Qtots = []
+       Qths = []
+       print 'Total Charge Calculation: rmin=', rmin, 'rmax=', rmax 
+       for U0, drho, drho_full, rho_TF, drho_wf in results:
+           Ugrid.append(U0)
+           Qtheory = (( 1.0 / np.sqrt(r0**2+rmin**2)) 
+                      - (1.0/ np.sqrt(r0**2 + rmax**2)))
+           Qtheory *= U0 * np.pi / 8.0
+           drhotot = drho + U0*rho_down -  Uvals(U0,r)**2 / 4.0/np.pi 
+           drhohm = highm(E_max, r, mlist[-1], U0)
+           drhohm -= highm(E_min, r, mlist[-1], U0)
+           drhotot += drhohm
+           Qsim = 0.5 * dr * drhotot[imin] * r[imin]
+           Qsim += 0.5 * dr * drhotot[imax] * r[imax]
+           for i in range (imin+1, imax):
+               Qsim += dr * drhotot[i] * r[i] 
+           Qsim *= 2.0 * np.pi
+           Qtots.append(Qsim)
+           Qths.append(Qtheory)
+           print 'Total Charge: U0=', U0, 'Theory=', Qtheory, 'sim=', Qsim
+           print 'Percentage Difference', Qsim / Qtheory * 100.0,'%'
+       Ugrid = np.array(Ugrid)
+       Qtots = np.array(Qtots)
+       Qths = np.array(Qths)
+       grad = np.polyfit(Ugrid,Qtots, 3)
+       print 'polyfit', grad
+       figure()
+       title('Total Charge vs U0')
+       plot(Ugrid, Qtots, label='sim')
+       plot(Ugrid, Qths, label='theory')
+       plot(Ugrid, (grad[0]*Ugrid**3+grad[1]*Ugrid**2+grad[2]*Ugrid), 'k--', label='fit')
+       plot(Ugrid, (np.pi/8.0*Ugrid + 0.19*Ugrid**3), label='B-S')
+       legend()
+
+   if False:
+       figure()
+       #title('Beta against drho')
+       title('r against linear beta coeff')
+       As = []
+       Bs = []
+       rgrid = []
+       rlow = 3.0
+       rhigh = 12.0
+       num = [t[0] for t in enumerate(r) if t[1] < rhigh 
+              and t[1] > rlow]
+       for i in num:
+           Us = []
+           drhovals = []
+           for U0, drho, drho_full, rho_TF, drho_wf in results:
+               Us.append(U0)
+               drhovals.append(rho_RPA[i] / drho[i])
+           Us = np.array(Us)
+           drhovals = Us * np.array(drhovals)
+           grad = np.polyfit(Us, drhovals, 1)
+          # print "Intercept = ", grad[1], "for r = ", r[i]
+          # print "Gradient = ", grad[0], "for r = ", r[i]
+          # plot(Us,drhovals, label='r = %g' %r[i])
+           rgrid.append(r[i])
+           As.append(grad[1])
+           Bs.append(grad[0])
+       rgrid = np.array(rgrid)
+       As = np.array(As)
+       Bs = np.array(Bs)
+      #print abs(As), rgrid
+      #print abs(As).min(), abs(As).max()
+       plot(rgrid, As, label="Intercept")
+       plot(rgrid, Bs, label="Gradient")
+       print "Average Gradient", np.average(Bs), "+/-", np.sqrt(np.var(Bs))
+       print "Average Intercept", np.average(As), "+/-", np.sqrt(np.var(As))
+       figure()
+       loglog(np.abs(rgrid), np.abs(As), label='Intercept')
+       loglog(np.abs(rgrid), np.abs(Bs), label='Gradient')
+       grad1 = np.polyfit(log(rgrid),log(abs(Bs)), 1)
+       print "Gradient Gradient = ", grad1[0]  
+       legend()
+
+
+   if False:
+       figure()
+       title('loglog Beta against drho')
+       for i in [10,50,100,200,300,400,500]:
+           Us = []
+           drhovals = []
+           for U0, drho, drho_full, rho_TF, drho_wf in results:
+               Us.append(U0)
+               drhovals.append(drho[i])
+           Us = np.array(Us)
+           drhovals = np.array(drhovals)
+           grad = np.polyfit(log(Us), log(abs(drhovals)), 1)
+           print "Power relation = ", grad[0], "for r = ", r[i]
+           loglog(Us,abs(drhovals), label='r = %g' %r[i])
+           legend()  
+        
+
+   if False: ##1/r^2 fit of full rho
+       coeffs = []
+       UGrid = []
+       resmat = []
+       rmin = 2.0
+       rmax = 10.0
+       ivals = [t[0] for t in enumerate(r) if t[1] < rmax
+                and t[1] > rmin]
+       rvals = [r[t] for t in ivals]
+       rvals2 = 1.0 / (np.array(rvals))**2
+       for U0, drho, drho_full, rho_TF, drho_wf in results:
+           rhores = drho - rho_RPA*U0
+           resmat.append(rhores)
+           rhovals = np.array([rhores[t] for t in ivals])
+           gradient =  np.polyfit(rvals2,rhovals, 1)       
+           print 'U0 = ', U0, '1/r^2 gradient =', gradient[0]
+           coeffs.append(gradient[0])
+           UGrid.append(U0)
+           figure()
+           title('U0=%g' %U0)
+           plot(r,rhores, label='sim')
+           plot(rvals, gradient[0] * rvals2, label='1/r^2 fit')
+           legend()
+       #np.save('resmat', resmat)
+       US = np.linspace(UGrid[0], UGrid[-1], 100)
+       figure()
+       UGrid = np.array(UGrid)
+       coeffs = np.array(coeffs)
+       title('1/r^2 Coefficients against U0')
+       plot(UGrid,coeffs, label='sim')
+       plot(US, (US**2)/(4.0*np.pi) , label='theory')
+       legend()
+       figure()
+       plot(UGrid, 4.0*np.pi*coeffs/UGrid**2)
+       figure()
+       comp = coeffs[0] / UGrid[0]
+       U0gradient = polyfit(log(abs(UGrid)), log(abs(coeffs)), 1)
+       #comp2 = coeffs[0] / UGrid[0]**U0gradient[0]
+       print 'Coefficient U0 power relation', U0gradient[0]
+       loglog(abs(UGrid),abs(coeffs), label='coeffs')
+       loglog(abs(UGrid), abs(UGrid**U0gradient[0])*0.1 , label='polyfit')
+       loglog(abs(UGrid), 0.1*UGrid**2, label='quadratic')
+       legend()
+       #np.save('coeffmat', [UGrid,coeffs])
    show()
-   
-   #E, dostens = DOS2(Ematp, Ematn, mlist ,r)
-   #np.save("rvec",r)
-   #np.save("mlist",mlist)
-   #np.save("Evec",E)
-   #np.save("potvec-cn-U=%g-grid=%g-r0=%g" %(Ustr, N, r0),pot)
