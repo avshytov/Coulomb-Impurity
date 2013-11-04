@@ -347,7 +347,7 @@ def test_ode():
     plot (r, rho_0, label="bessel")
     legend()
     show ()
-    
+
 if __name__ == '__main__':
    ### dm terminates at element 6
 #   test_ode()
@@ -355,7 +355,7 @@ if __name__ == '__main__':
    N = 1000
    rmin  = 0.01
    rmax  = 25.0
-   Mmax  = 15 
+   Mmax  = 15
    Mmax2 = 15
    
    N2 = 500
@@ -412,7 +412,7 @@ if __name__ == '__main__':
        print "alpha = ", alpha, "A = ", A
        fitvals = alpha * xvals + A
        #alpha # + grad[1]
-       print fitvals
+#       print fitvals
        print np.shape(xvals), np.shape(fitvals)
        #plot(np.exp(xvals), np.exp(fitvals), '--', label='Fit: r = %g' % r_i)
    plot(Ev, np.abs(Ev) / 2.0 / np.pi, 'k--', label='linear')
@@ -467,7 +467,7 @@ if __name__ == '__main__':
 
    def highm(Ef, r, Mmax, U0):
        Jsum = np.zeros((len(r)))
-       #Efr = Ef + Uvals(U0,r)/2.0
+       Efr = Ef + Uvals(U0,r)/2.0
        for i in range (-Mmax, Mmax+1):
            Jsum += 2.0 * (special.jn(i,(Ef*r)))**2
        drhohm = 2.0 - Jsum
@@ -477,10 +477,12 @@ if __name__ == '__main__':
        return drhohm
          
 
-   Ustrengths = [-0.5, -0.45, -0.4, -0.35, -0.3, -0.25, -0.2, -0.15, -0.1,
-                 -0.09, -0.08, -0.07, -0.06, -0.05, -0.04, -0.03, -0.02, -0.01,
-                 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09,
-                 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
+   Ustrengths = [-0.7, -0.5, -0.2, -0.05, 0.05, 0.2, 0.5, 0.7]
+#[-1.0, -0.9, -0.8, -0.7, -0.6, -0.5, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+#[-0.5, -0.45, -0.4, -0.35, -0.3, -0.25, -0.2, -0.15, -0.1,
+#                 -0.09, -0.08, -0.07, -0.06, -0.05, -0.04, -0.03, -0.02, -0.01,
+#                 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09,
+#                 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
 #   np.save('Ustrengths', Ustrengths)
    for U0 in Ustrengths:
        U = Uvals(U0, r)
@@ -499,7 +501,9 @@ if __name__ == '__main__':
        drho_full =  drho + rho_bg 
        rho_TF = 1.0 / 4.0 / np.pi * ((E_max - U) * np.abs(E_max - U) - E_max * abs(E_max))
        drho_wf = rho_1 - rho_wf_0
-       #drhohmgen = highm(E_max,r,mlist[-1]) - highm(E_min,r,mlist[-1]) 
+       drhohm = highm(E_max,r,mlist[-1],U0) - highm(E_min,r,mlist[-1],U0)
+       allrhos = [r,drho, drho_full, rho_TF, drho_wf, drhohm, rho_bg, U0*rho_up, U0*rho_down]
+       np.save('allrhos-U0=%g-N=%d-Mmax=%d-B=%g-Emin=%g-Emax=%g' %(U0,N,np.max(mlist),B0,E_min,E_max), allrhos)
        results.append((U0, drho, drho_full, rho_TF, drho_wf))
        ivals = [t for t in range(len(r)) if r[t] > 1.0 and r[t] < 10.0]
        y_i = np.array([drho[t]/U0 for t in ivals])
@@ -570,10 +574,11 @@ if __name__ == '__main__':
           drhotot = drho + U0*rho_down - Uvals(U0,r)**2 / 4.0/np.pi 
           drhohm = highm(E_max, r, mlist[-1], U0)
           drhohm -= highm(E_min, r, mlist[-1], U0)
-          title('Different m contributions')
-          plot(r,drhotot, label='low m')
-          plot(r,-drhohm, label='high m')
-          figure()
+#          title('Different m contributions')
+#          plot(r,drhotot, label='low m')
+#          plot(r,-drhohm, label='high m')
+#          legend()
+#          figure()
           drhotot += drhohm
 #          drhomat.append(drhotot)
           plot (r, drhotot, label='sim')
