@@ -360,10 +360,10 @@ if __name__ == '__main__':
    
    N2 = 500
    rmax2 = 200.0
-   gam2 = np.pi * 0.8 / rmax2
+   gam2 = np.pi * 0.7 / rmax2
    
    #gam = np.pi * 0.8 / rmax
-   gam = np.pi * 0.8 / rmax
+   gam = np.pi * 0.7 / rmax
    
    #alpha = 0.2
    B0 = 0.0 #2.370
@@ -395,7 +395,7 @@ if __name__ == '__main__':
    dos_0 = dos_bg(mlist, Ev, r)
    ldos2 = prepareLDOS(Ev, r2, Ustr, U2, mlist2, B0, gam2)
    
-   graft(E_cut, Ev, r, ldos, r2, ldos2)
+#######   graft(E_cut, Ev, r, ldos, r2, ldos2)
    
    figure()
    title ("DOS")
@@ -477,12 +477,8 @@ if __name__ == '__main__':
        return drhohm
          
 
-   Ustrengths = [-0.7, -0.5, -0.2, -0.05, 0.05, 0.2, 0.5, 0.7]
-#[-1.0, -0.9, -0.8, -0.7, -0.6, -0.5, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-#[-0.5, -0.45, -0.4, -0.35, -0.3, -0.25, -0.2, -0.15, -0.1,
-#                 -0.09, -0.08, -0.07, -0.06, -0.05, -0.04, -0.03, -0.02, -0.01,
-#                 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09,
-#                 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
+   Ustrengths = [-0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, -0.05,
+                  0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
 #   np.save('Ustrengths', Ustrengths)
    for U0 in Ustrengths:
        U = Uvals(U0, r)
@@ -491,7 +487,7 @@ if __name__ == '__main__':
        print "do: ", U0
        ldos  = prepareLDOS(Ev, r,  U0, U,  mlist,  B0, gam)
        ldos2 = prepareLDOS(Ev, r2, U0, U2, mlist2, B0, gam2)
-       graft(E_cut, Ev, r, ldos, r2, ldos2)
+#####       graft(E_cut, Ev, r, ldos, r2, ldos2)
        F = 1.01340014 + 0.05991426 / np.sqrt(N) + 7.12091516 / N #### Correction
        rho = find_rho(Ev, r, ldos, E_min, E_max)
        rho_1 = getDensity(r, U0, U, mlist, B0, E_min, E_max, T)
@@ -582,7 +578,7 @@ if __name__ == '__main__':
           drhotot += drhohm
 #          drhomat.append(drhotot)
           plot (r, drhotot, label='sim')
-          plot(r, U0*rho_comp, 'k--', label='full RPA')
+          plot(r, U0*rho_up, 'k--', label='full RPA')
           legend() 
 #      np.save('drhomat', drhomat)
 

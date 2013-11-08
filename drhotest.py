@@ -91,7 +91,7 @@ if True:
     title('Asymmetric')
     for i in range (0,half):
         loglog(r, abs(asymrho[i,:]/asymrho[i,0]))
-
+    legend()
 
 
 if True:

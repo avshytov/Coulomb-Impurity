@@ -33,7 +33,7 @@ Nf = 4
 alpha = 2.5
 
 def rho_minus12(U,r):
-    return -U / r / 2 / np.pi**2 * Nf * alpha
+    return -U / r / 2.0 / np.pi**2 * Nf * alpha
 
 U0 = (r**2 + r_0**2)**(-0.5)
 tau_u = 0.1
