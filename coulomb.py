@@ -8,7 +8,7 @@ def coulombkernel(r):
     M = zeros((N,N))
     for i in range (0,N):
         r_i = r[i]
-        print "Coulomb kernel:", i, "/", N
+        print "Coulomb kernel:", i+1, "/", N
         for j in range (0,N):
             r_j = r[j]
             if i == j:
