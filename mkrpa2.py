@@ -167,6 +167,8 @@ def do_RPA_intra(r, kF):
             #Fij = F_intra2(r[i], r[j], kF)
             #Q1[i, j] = Fij * r[j] * dr[j]
             #Q1[j, i] = Fij * r[i] * dr[i]
+        Q1[i, 0] += F_intra2(r[i], 0.0, kF)* r[0]**2 / 2.0
+        
         print "sum: ", sum(Q1[i, :]) * 4.0 * math.pi**2 # must be one
         if False and i % 20 == 0:
            import pylab
@@ -182,7 +184,10 @@ def RPA_intra(r, kF):
        Attempt to load the intraband kernel from file, 
        calculate if unavailable
     """
-    fname = "rpakernel-intra-kF=%g.dat.npz" % kF
+    Rmin = r.min()
+    Rmax = r.max()
+    N = len(r)
+    fname = "rpakernel-intra-kF=%g-Rmin=%g-Rmax=%g-N=%d.dat.npz" % (kF, Rmin, Rmax, N)
     try: 
         data = np.load(fname)
         print "Intraband kernel loaded from", fname
@@ -215,7 +220,7 @@ def mk_inter_spline():
        and a function that reuses this interpolation
     """
     def F(x):
-        return F_inter(x, 1.0, 1e-3)
+        return F_inter(x, 1.0, 1e-2)
     xvals = np.arange(0.0001, 1.0001, 0.001)
     yvals = np.vectorize(F)(xvals)
     spl = interpolate.splrep(xvals, yvals)
@@ -229,7 +234,7 @@ def mk_inter_spline():
         y = interpolate.splev(x, spl, der=0)
         return y / r**3
     return Q_spline
-    
+   
 def do_RPA_inter(r):
     """
        Calculate the intraband kernel
@@ -241,53 +246,63 @@ def do_RPA_inter(r):
     for i in range (0, N):
         print "Qinter: ", i
         ri = r[i]
+        # 
+        # Integrate from r[0] to ri. Introduce 
+        # dimensionless variable v = r / ri, 0 < v < 1
+        #
         for j in range (0, i):
-            r1 = r[j]
-            r2 = r[j + 1]
-            dr = r2 - r1
-            rc = (r1 + r2)/2.0
-            def f1(rx):
-                return Qs(ri, rx)
-            def f2(rx):
-                return Qs(ri, rx) * (rx - rc)
+            v1 = r[j] / ri
+            v2 = r[j + 1] / ri
+            dv = v2 - v1
+            vc = (v1 + v2)/2.0
+            def f1(v):
+                return Qs(ri, ri * v)
+            def f2(v):
+                return Qs(ri, ri * v) * (v - vc) 
             if integrate_all or (abs(i - j) < 10) or (i < 20):
-                 I1, eps1 = integrate.quad(f1, r1, r2)
-                 I2, eps2 = integrate.quad(f2, r1, r2)
+                 I1, eps1 = integrate.quad(f1, v1, v2)
+                 I2, eps2 = integrate.quad(f2, v1, v2)
             else:
-                 I1 = Qs(ri, rc) * dr
-                 qs1 = Qs(ri, r1)
-                 qs2 = Qs(ri, r2)
-                 I2 = (qs2 - qs1) * dr**2 / 12.0
-            Q[i, j]     += ( I1 / 2.0 - I2 / dr ) * r1 
-            Q[i, j + 1] += ( I1 / 2.0 + I2 / dr ) * r2
+                 I1  = Qs(ri, ri * vc) * dv
+                 qs1 = Qs(ri, ri * v1)
+                 qs2 = Qs(ri, ri * v2)
+                 I2  = (qs2 - qs1) * dv**2 / 12.0
+            #print "<", i, j, I1 * ri, I2/dv * ri
+            Q[i, j]     += ( I1 / 2.0 - I2 / dv ) * ri**2 * v1 
+            Q[i, j + 1] += ( I1 / 2.0 + I2 / dv ) * ri**2 * v2
         
+        #
+        # Now integrate from r' to r[-1]: r = ri / u,   0 < u < 1
+        #
         for j in range (i + 1, N):
-            x1 = 1.0/r[j]
-            x2 = 1.0/r[j - 1]
-            drho = x2 - x1
+            u1 = ri/r[j]
+            u2 = ri/r[j - 1]
+            du = u2 - u1
             r1 = r[j - 1]
             r2 = r[j]
-            rhoc = (x1 + x2)/2.0
-            def f3(rhox):
-                return Qs(ri, 1.0/rhox) / rhox**3 
-            def f4(rhox):
-                return Qs(ri, 1.0/rhox) / rhox**3 * (rhox - rhoc)
+            uc = (u1 + u2)/2.0
+            def f3(u):
+                return Qs(ri, ri/u) / u**3
+            def f4(u):
+                return Qs(ri, ri/u) / u**3 * (u - uc) 
             if integrate_all or (abs(i - j) < 10) or (i < 20):
-                I3, eps3 = integrate.quad(f3, x1, x2)
-                I4, eps4 = integrate.quad(f4, x1, x2)
+                I3, eps3 = integrate.quad(f3, u1, u2)
+                I4, eps4 = integrate.quad(f4, u1, u2)
             else:
-                I3  = Qs(ri, 1.0/rhoc) / rhoc**3 * drho
-                qs1 = Qs(ri, 1.0/x1) / x1**3
-                qs2 = Qs(ri, 1.0/x2) / x2**3
-                I4 = (qs2 - qs1)*drho**2/12.0
-            Q[i, j - 1] += ( I3 / 2.0 + I4 / drho) 
-            Q[i, j]     += ( I3 / 2.0 - I4 / drho) 
+                I3  = Qs(ri, ri/uc) / uc**3 * du
+                qs1 = Qs(ri, ri/u1) / u1**3  
+                qs2 = Qs(ri, ri/u2) / u2**3 
+                I4 = (qs2 - qs1)*du**2 / 12.0  
+            #print ">", i, j, I3 * ri**2, I4/du * ri**2
+            Q[i, j - 1] += ( I3 / 2.0 + I4 / du) * ri**2# * r1
+            Q[i, j]     += ( I3 / 2.0 - I4 / du) * ri**2# * r2
     
         def f5(rx):
             return Qs(ri, rx)
         def f6(rx):
             return Qs(ri, rx) * rx
     
+        # Integrate from 0 to r[0] by linear extrapolation
         r1 = r[0]
         r2 = r[1]
         dr = r2 - r1
@@ -301,6 +316,10 @@ def do_RPA_inter(r):
         def f8(rhox):
             return Qs(ri, 1.0/rhox) / rhox**2
     
+        #
+        # Integrate from r[-1] to infinity, 
+        # extrapolating U(r) as U[-1] r[-1] / r
+        #
         x1 = 1.0/r[-1]
         x2 = 1.0/r[-2]
         I7, eps7 = integrate.quad(f7, 0.0, x1)
@@ -308,12 +327,17 @@ def do_RPA_inter(r):
         drho = x2 - x1
         Q[i, -1] += (   + I7*x2/drho - I8/drho)  
         Q[i, -2] += (   - I7*x1/drho + I8/drho)  
-        
-        s = np.dot(Q[i, :], 1.0/r)
-        Q[i, i] -= r[i] * s
+        #print i, "**",  Q[i, 0], Q[i, 1], Q[i, -1], Q[i, -2]
+        #ff = open("xxx-%d.dat" % i, 'w')
+        #for j in range(0, len(r)):
+        #    ff.write("%d %g\n" % (j, Q[i, j]))
+        #ff.close()
+        s0 = np.dot(Q[i, :], 1.0/r)
+        s2 = np.dot(Q[i, :], r/r)
+        Q[i, i] -= r[i] * s0  
         s = np.dot(Q[i, :], 1.0/r)
         s1 = np.dot(Q[i, :], r/r)
-        print "s: ", s, s1
+        print "s: ", s, s1, s0, s2
     return Q
 
 def RPA_inter(r):
@@ -321,7 +345,10 @@ def RPA_inter(r):
        Attempt to load interband kernel from file, 
        recalculate if the data is not available
     """
-    fname = "rpakernel-inter.dat.npz"
+    Rmin = r.min()
+    Rmax = r.max()
+    N = len(r)
+    fname = "rpakernel-inter-Rmin=%g-Rmax=%g-N=%g.dat.npz" % (Rmin, Rmax, N)
     try: 
         data = np.load(fname)
         print "Intraband kernel loaded from", fname
@@ -336,20 +363,21 @@ def RPA_inter(r):
         return Q
 
 if __name__ == '__main__':
-   testF(1.0, 2.0, 1.0)
-   testF(1.0, 10.0, 1.0)
-   testF(1.0, 1.1, 1.0)
+   if False:
+      testF(1.0, 2.0, 1.0)
+      testF(1.0, 10.0, 1.0)
+      testF(1.0, 1.1, 1.0)
    
-   show_pi()
+      show_pi()
    
    rmin = 0.01
-   rmax = 30.0
-   N = 100
+   rmax = 100.0
+   N = 200
    r = rmin * np.exp(math.log(rmax/rmin)/(N - 1.0) * np.arange(0, N, 1.0))
    #r = np.arange(0.01, 10.0, 0.01)
    kF = 1.0
-   Q_intra  = RPA_intra(r, kF)
    Q_inter = RPA_inter(r)
+   Q_intra  = RPA_intra(r, kF)
    r_0 = 1.0
    U = 1.0 / (r**2 + r_0**2)**0.5
    def Uq(q):
@@ -366,7 +394,18 @@ if __name__ == '__main__':
        return - I / 2.0 / math.pi
    
    rho_RPA = np.dot(Q_inter, U)
-   rho_TH = -1.0 / 16.0 / (r**2 + r_0**2)**1.5
+   
+   
+   C_RPA = 0.0
+   for i in range(len(r) - 1):
+       y = (rho_RPA[i]*r[i] + rho_RPA[i + 1]*r[i + 1]) / 2.0
+       C_RPA += y * (r[i + 1] - r[i])
+   C_RPA += rho_RPA[0] * r[0]**2/2.0
+   C_RPA += rho_RPA[-1] * r[-1]**2
+   C_RPA *= 2.0 * math.pi
+   print "Charge: ", C_RPA, "should be", -math.pi/8.0
+   
+   rho_TH = -1.0 / 16.0 * r_0 / (r**2 + r_0**2)**1.5
    rho_intra = np.dot(Q_intra, U)
    rho_th_intra = -U * abs(kF) / 2.0 / math.pi
    rho_d = np.vectorize(rho_direct)(r)
