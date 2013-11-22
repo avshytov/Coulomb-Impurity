@@ -77,6 +77,40 @@ def F_intra2(r1, r2, kF):
     #print "In F2: ", I, I2
     return (I + I2) * kF**3 / (4.0 * math.pi**2)
 
+def G2_intra(r, kF): # xi == kF * r
+    print "r, KF = ", r, kF
+    #print r1, r2, kF
+    """
+        Integration routine --- for internal use in Q_intra
+    """
+    s = np.max([kF * r, 1.0])
+    #
+    # First, handle the difference between Pi_intra 
+    # and 2/3 1/(q^2 + 1)
+    #
+    def f(x):
+        J1 = special.jn(0, x * kF * r / s)
+        return Pi_intra2(x * kF / s) * J1 * x / s**2
+    #print r1, r2
+    I, eps = integrate.quad(f, 0.0, np.Inf, limit=300)
+    
+    #
+    # Now add the missing contribution:
+    #   The integral for 1/(q^2 + 1) can be found as 
+    #   Int q dq /(q^2 + 1) J_0(qr)  ~ K_0(r)
+    #   With two Bessel functions, we can apply addition theorem, 
+    #   which gives K_0(|r - r'|), averaged over angles
+    #
+    #def f2(theta):
+    #    r = math.sqrt(r1**2 + r2**2 + 2 * r1 * r2 * math.cos(theta))
+    #    return special.kn(0, kF * r)
+    #I2, eps2 = integrate.quad(f2, 0.0, math.pi)
+    I2 = special.kn(0, kF * r)
+    I2 *=  2.0 / 3.0 
+    
+    #print "In F2: ", I, I2
+    return (I + I2) * kF**3 / (4.0 * math.pi**2)
+
 def F_intra(r1, r2, kF):
     """
         Integration routine --- for internal use in Q_intra
@@ -94,6 +128,34 @@ def F_intra(r1, r2, kF):
     print "In F1:", I
     return (I + I2) * kF**3 / (4.0 * math.pi**2)
 
+    
+    
+def mk_intra_spline(kF, rmax):
+    xvals = np.arange(0.001, kF * rmax, 0.03)
+    yvals = np.vectorize(lambda r: G2_intra(r, kF))(xvals)
+    print xvals, yvals
+    spl = interpolate.splrep(xvals, yvals)
+    def F_intra(r1, r2):
+        def f_theta(theta):
+            R = math.sqrt(r1**2 + r2**2 + 2.0 * r1 * r2 * math.cos(theta))
+            return interpolate.splev(R, spl, der=0)
+        I, eps = integrate.quad(f_theta, 0, math.pi) 
+        return I  / math.pi
+    return F_intra
+
+def testG(r1vals, r2vals, kF):
+    import pylab
+    pylab.figure()
+    Gfun = mk_intra_spline(kF, max(r1vals) + max(r2vals))
+    for r1 in r1vals:
+        pylab.figure()
+        F2vals = np.vectorize(lambda r2: F_intra2(r1, r2, kF))(r2vals)
+        Gvals  = np.vectorize(lambda r2: Gfun(r1, r2))(r2vals)
+        pylab.plot (r2vals, F2vals, label='F2')
+        pylab.plot (r2vals, Gvals, label='G')
+        pylab.title('r1 = %g' % r1)
+    pylab.show()
+
 def testF(r1, r2, kF):
     """
         Test F_intra2 by comparing it to F_intra
@@ -101,10 +163,12 @@ def testF(r1, r2, kF):
     """
     F1 = F_intra(r1, r2, kF)
     F2 = F_intra2(r1, r2, kF)
+    Gfun = mk_intra_spline(kF, 10.0)
+    G = Gfun(r1, r2)
     print "r1, 2 = ", r1, r2, "kF = ", kF
     print "F1 = ", F1, "F2 = ", F2, "diff = ", F1 - F2, "rel: ", (F1 - F2)/(F1 + F2)*0.5
-    
-    
+    print "G = ", G, "diff = ", G - F1, "rel:", (G - F1)/(G + F1) * 0.5
+
 def do_RPA_intra(r, kF):
     """
        Calculate the intraband kernel
@@ -117,6 +181,7 @@ def do_RPA_intra(r, kF):
     #   pylab.figure()
     integrate_all = False
     dr0 = 0.5
+    Gfun = mk_intra_spline(kF, max(r) * 2.0)
     for i in range(len(r)):
         print "Qintra:", i
         for j in range(0, len(r) - 1):
@@ -138,7 +203,8 @@ def do_RPA_intra(r, kF):
             #Fk = np.zeros ((nj + 3,))
             #xk = np.linspace(r1, r2, nj + 3)
             for k in range(nj):
-                Fk[k] = F_intra2(r[i], xk[k], kF) * xk[k]  
+                Fk[k] = Gfun(r[i], xk[k]) * xk[k]
+                #Fk[k] = F_intra2(r[i], xk[k], kF) * xk[k]  
             dxk = dr / nj
             
             I1 = sum(Fk) * dxk
@@ -364,10 +430,12 @@ def RPA_inter(r):
 
 if __name__ == '__main__':
    if False:
+      testG([1.0, 2.0, 3.0, 5.0, 10.0], np.arange(0.01, 10.0, 0.1), 1.0)
+   if False:
       testF(1.0, 2.0, 1.0)
       testF(1.0, 10.0, 1.0)
       testF(1.0, 1.1, 1.0)
-   
+   if False:
       show_pi()
    
    rmin = 0.01
