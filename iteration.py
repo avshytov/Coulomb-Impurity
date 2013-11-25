@@ -7,12 +7,13 @@ from scipy import special
 from scipy.interpolate import splev, splrep
 from diracsolver import (makeDirac, solveDirac, dos_bg, diracLDOS, find_rho, getDensity,
                          prepareLDOS)
+from pylab import *
 
-N = 1000
+N = 200
 Mmax = 11
 rexp = np.zeros((N))
 rmin = 0.01
-rmax = 25.0
+rmax = 40.0
 for i in range (0,N):
     rexp[i] = rmin * math.exp(math.log(rmax/rmin)/(N - 1.0) * i)
     #r[i] = 0.1 * (i) + 0.01
@@ -27,8 +28,8 @@ gam = 0.7 * np.pi / rmax
 mlist = np.array(range(0, Mmax))
 F = 1.01340014 + 0.05991426 / np.sqrt(N) + 7.12091516 / N #### Correction
 
-tau_u = 0.1
-tau_rho = 0.1
+tau_u = 0.01
+tau_rho = 0.01
 
 U_0 = np.zeros((len(r)))
 ldos_0 = prepareLDOS(Ev,r,0.0,U_0,mlist,0.0,gam)
@@ -53,6 +54,18 @@ def get_cou_mat(r):
         np.savez(fname, kernel=coumat, r=r)
         return coumat
 
+def RPA_kernel_rho(U,r,kF):
+    inter = np.load('rpakernel-inter-Rmin=%g-Rmax=%g-N=%d.dat.npz'
+                      %(r[0], r[-1], len(r)))
+    Q = inter['Q']
+    if abs(kF) < 1e-8:
+        print "Interband RPA only"
+    else:
+        intra = np.load('rpakernel-intra-kF=%g-Rmin=%g-Rmax=%g-N=%d.dat.npz'
+                      %(abs(kF),r[0], r[-1], len(r)))
+        Q+=intra['Q']
+    return np.dot(Q,U)
+
 def highm(Ef,r,Mmax,U):
     Jsum = np.zeros((len(r)))
     Efr = Ef + U/2.0
@@ -64,17 +77,22 @@ def highm(Ef,r,Mmax,U):
     drhohm *= - abs(Ef) / 4.0 / np.pi * U
     return drhohm
 
-def seacontribution(r,rho,U,mlist,E_min,E_max):
-    rho += highm(E_max,r,mlist[-1],U)
+def seacontribution(r,rexp,rho,U,mlist,E_min,E_max):
+    rho = highm(E_max,r,mlist[-1],U)
     rho -= highm(E_min,r,mlist[-1],U)
     rho -= U**2/4.0/np.pi
-    rho += RPAresp(U,E_min)
+    rho += RPAresp(U,E_min,r,rexp)
     return rho
 
-def RPAresp(U,Ef):
-    return -abs(Ef)/2.0/np.pi*U
+def RPAresp(U,Ef,r,rexp):
+    Uexp = gridswap(r,rexp,U)
+    kernelrho = RPA_kernel_rho(Uexp,r,Ef)
+    kernelrho = gridswap(rexp,r,kernelrho)
+    return kernelrho
 
-def rho_from_U(U,r,Ev):
+def rho_from_U(U,r,rexp,Ev):
+    Nf = 4.0
+    alpha = 1.0
     info = np.load('info.npz')
     Ustr = info['Ustr']
     B = info['B']
@@ -85,8 +103,9 @@ def rho_from_U(U,r,Ev):
     rho_0 = info['rho_0']
     ldos = diracLDOS(Ev,r,U,mlist,B,gam)
     rho = find_rho(Ev,r,ldos,E_min,E_max)
-    rho = F * (rho - rho_0) + rho_0
-    return seacontribution(r,rho,U,mlist,E_min,E_max)
+    rho = F * (rho - rho_0)
+    rho += seacontribution(r,rexp,rho,U,mlist,E_min,E_max)
+    return rho * Nf * alpha
 
 def gridswap(r1,r2,f1):
     spl = splrep(r1,f1)
@@ -112,8 +131,8 @@ def solve_coulomb(rho_U, U0, r, rexp, Ev, tau_U, tau_rho):
         rho = gridswap(rexp,r,rho)
         U1 += U0
         err_U = linalg.norm(U - U1)
-        U += tau_U * (U1- U)
-        rho1 = rho_U(U, r, Ev)
+        U += tau_U * (U1 - U)
+        rho1 = rho_U(U, r, rexp, Ev)
         err_rho = linalg.norm(rho1 - rho)
         rho += tau_rho * (rho1 - rho)
         print "U error", err_U, "rho error", err_rho, "it", it
@@ -122,39 +141,39 @@ def solve_coulomb(rho_U, U0, r, rexp, Ev, tau_U, tau_rho):
         rhoerror.append(err_rho)
         if it % 10 == 0:
             np.savez('Errors-U0=%g-B=%g-N=%d-tauU=%g-taurho=%g.npz' 
-                     %(info['Ustr'],info['B'],len(r),tau_U,rau_rho),
+                     %(info['Ustr'],info['B'],len(r),tau_U,tau_rho),
                      erU=Uerror, errho=rhoerror)
-#        if True:
-#            if it % 1 == 0:
-#                j+=1
-#                if j < 8:
-#                    figure(0)
-#                    title('Potential')
-#                    plot(r,U, label='it=%d' %it)
-#                    legend()
-#                    figure(1)
-#                    title('Rho')
-#                    plot(r,rho, label='it=%d' %it)
-#                    legend()
-#                else:
-#                    figure(0)
-#                    title('Potential')
-#                    plot(r,U,'--', label='it=%d' %it)
-#                    legend()
-#                    figure(1)
-#                    title('Rho')
-#                    plot(r,rho,'--', label='it=%d' %it)
-#                    legend()
-#                if j == 13:
-#                    j = 0
-#                    figure(0)
-#                    plot(r,U0, label='U0')
-#                    legend()
-#                    figure(2)
-#                    plot(Uerror, label='U error')
-#                    plot(rhoerror, label='rho error')
-#                    legend()
-#                    show()
+        if False:
+            if it % 5 == 0:
+                j+=1
+                if j < 8:
+                    figure(0)
+                    title('Potential')
+                    plot(r,U, label='it=%d' %it)
+                    legend()
+                    figure(1)
+                    title('Rho')
+                    plot(r,rho, label='it=%d' %it)
+                    legend()
+                else:
+                    figure(0)
+                    title('Potential')
+                    plot(r,U,'--', label='it=%d' %it)
+                    legend()
+                    figure(1)
+                    title('Rho')
+                    plot(r,rho,'--', label='it=%d' %it)
+                    legend()
+                if j == 13:
+                    j = 0
+                    figure(0)
+                    plot(r,U0, label='U0')
+                    legend()
+                    figure(2)
+                    plot(Uerror, label='U error')
+                    plot(rhoerror, label='rho error')
+                    legend()
+                    show()
         if (err_U < (1e-7)) and (err_rho < (1e-7)):
             break
 
