@@ -29,8 +29,8 @@ gam = 0.7 * np.pi / rmax
 mlist = np.array(range(0, Mmax))
 F = 1.01340014 + 0.05991426 / np.sqrt(N) + 7.12091516 / N #### Correction
 
-tau_u = 0.01
-tau_rho = 0.01
+tau_u = 0.1
+tau_rho = 0.1
 
 U_0 = np.zeros((len(r)))
 ldos_0 = prepareLDOS(Ev,r,0.0,U_0,mlist,0.0,gam)
@@ -82,13 +82,15 @@ def seacontribution(r,rexp,rho,U,mlist,E_min,E_max):
 def RPAresp(U, Ef, r, rexp):
     Uexp = gridswap(r, rexp, U)
     # kF = abs(E_F) -- AVS
-    kernelrho = RPA_kernel_rho(Uexp, rexp, abs(Ef))
-    kernelrho = gridswap(rexp, r, kernelrho)
+    # kernelrho was a silly name
+    # Also, mind the spaces -- AVS
+    rho_RPA = RPA_kernel_rho(Uexp, rexp, abs(Ef))
+    rho_RPA = gridswap(rexp, r, rho_RPA)
     return kernelrho
 
 def rho_from_U(U,r,rexp,Ev):
     Nf = 4.0
-    alpha = 1.0
+    alpha = 2.5
     info = np.load('info.npz')
     Ustr = info['Ustr']
     B = info['B']
