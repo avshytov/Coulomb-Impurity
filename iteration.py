@@ -8,6 +8,7 @@ from scipy.interpolate import splev, splrep
 from diracsolver import (makeDirac, solveDirac, dos_bg, diracLDOS, find_rho, getDensity,
                          prepareLDOS)
 from pylab import *
+import mkrpa2
 
 N = 200
 Mmax = 11
@@ -54,16 +55,10 @@ def get_cou_mat(r):
         np.savez(fname, kernel=coumat, r=r)
         return coumat
 
-def RPA_kernel_rho(U,r,kF):
-    inter = np.load('rpakernel-inter-Rmin=%g-Rmax=%g-N=%d.dat.npz'
-                      %(r[0], r[-1], len(r)))
-    Q = inter['Q']
-    if abs(kF) < 1e-8:
-        print "Interband RPA only"
-    else:
-        intra = np.load('rpakernel-intra-kF=%g-Rmin=%g-Rmax=%g-N=%d.dat.npz'
-                      %(abs(kF),r[0], r[-1], len(r)))
-        Q+=intra['Q']
+def RPA_kernel_rho(U, r, kF):
+    Q = mkrpa2.RPA_inter(r)  ## I cannot stand this nonsense! -- AVS
+    if (kF * r.max() > 0.01):
+        Q += mkrpa2.RPA_intra(r, kF)
     return np.dot(Q,U)
 
 def highm(Ef,r,Mmax,U):
@@ -84,10 +79,11 @@ def seacontribution(r,rexp,rho,U,mlist,E_min,E_max):
     rho += RPAresp(U,E_min,r,rexp)
     return rho
 
-def RPAresp(U,Ef,r,rexp):
-    Uexp = gridswap(r,rexp,U)
-    kernelrho = RPA_kernel_rho(Uexp,r,Ef)
-    kernelrho = gridswap(rexp,r,kernelrho)
+def RPAresp(U, Ef, r, rexp):
+    Uexp = gridswap(r, rexp, U)
+    # kF = abs(E_F) -- AVS
+    kernelrho = RPA_kernel_rho(Uexp, rexp, abs(Ef))
+    kernelrho = gridswap(rexp, r, kernelrho)
     return kernelrho
 
 def rho_from_U(U,r,rexp,Ev):
