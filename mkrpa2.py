@@ -131,7 +131,7 @@ def F_intra(r1, r2, kF):
     
     
 def mk_intra_spline(kF, rmax):
-    xvals = np.arange(0.001, kF * rmax, 0.03)
+    xvals = np.arange(0.001, max(kF * rmax, 1.0), 0.03)
     yvals = np.vectorize(lambda r: G2_intra(r, kF))(xvals)
     print xvals, yvals
     spl = interpolate.splrep(xvals, yvals)
