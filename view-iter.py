@@ -6,7 +6,12 @@ from scipy import linalg
 
 if __name__ == '__main__':
    # Search for files matching the template
-   fnames = glob.glob(sys.argv[1])
+   fnames = [] 
+   for arg in sys.argv[1:]:  # there might be more than one arg
+       print "arg:", arg
+       fnames_arg = glob.glob(arg)
+       print "fnames: ", fnames_arg
+       fnames.extend(fnames_arg)
    datasets = []
    # Extract iteration number from each file name
    for f in fnames:
