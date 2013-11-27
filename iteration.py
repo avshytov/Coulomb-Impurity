@@ -86,7 +86,7 @@ def RPAresp(U, Ef, r, rexp):
     # Also, mind the spaces -- AVS
     rho_RPA = RPA_kernel_rho(Uexp, rexp, abs(Ef))
     rho_RPA = gridswap(rexp, r, rho_RPA)
-    return kernelrho
+    return rho_RPA
 
 def rho_from_U(U,r,rexp,Ev):
     Nf = 4.0
