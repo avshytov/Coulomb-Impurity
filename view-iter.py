@@ -15,6 +15,7 @@ from scipy import linalg
 if __name__ == '__main__':
    # Search for files matching the template
    fnames = [] 
+   U0 = 0.0
    for arg in sys.argv[1:]:  # there might be more than one arg
        print "arg:", arg
        fnames_arg = glob.glob(arg)
