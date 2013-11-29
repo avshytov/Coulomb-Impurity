@@ -15,7 +15,7 @@ from scipy import linalg
 if __name__ == '__main__':
    # Search for files matching the template
    fnames = [] 
-   U0 = 0.0
+   Z = 0.0
    for arg in sys.argv[1:]:  # there might be more than one arg
        print "arg:", arg
        fnames_arg = glob.glob(arg)
@@ -32,8 +32,8 @@ if __name__ == '__main__':
            if field[:3] == 'it=':
               iter = int(field[3:])
               datasets.append((f, iter))
-           if field[:3] == 'U0=':
-              U0 = float(field[3:])
+           if field[:2] == 'Z=':
+              Z = float(field[3:])
    # Sort data sets
    datasets.sort(lambda x, y: cmp(x[1], y[1]))
    Ndata = min(2, len(datasets))
@@ -53,7 +53,7 @@ if __name__ == '__main__':
              loglog(data['r'], abs(data[key]), label=key + " : " + id)
    def make_figure(datas, keys, is_normal=True):
        figure()
-       title ("U0 = %g N = %d" % (U0, len(datas[-1][1]['r'])))
+       title ("Z = %g N = %d" % (Z, len(datas[-1][1]['r'])))
        for k in keys:
            for i, d in datas:
                print i
@@ -90,8 +90,8 @@ if __name__ == '__main__':
    Nf = 4
    alpha = 1.0
    eps_th = 1.0 + 3.14159*alpha * Nf / 8
-   Uth = U0 / np.sqrt(r**2 + r_0**2) / eps_th
-   rho_th = -U0 * Nf * alpha / eps_th / np.sqrt(r**2 + r_0**2)**3 / 16
+   Uth = Z / np.sqrt(r**2 + r_0**2) / eps_th
+   rho_th = -Z * Nf * alpha / eps_th / np.sqrt(r**2 + r_0**2)**3 / 16
    plot(r, Uth - Uth[-1], label='Uth')
    legend()
    make_figure(datas, ['rho', 'rho1'], False)
