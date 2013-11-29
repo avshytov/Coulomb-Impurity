@@ -42,6 +42,12 @@ def do_coulombkernel(r):
                 I_bot = ellip_bot * alpha_bot
                 # i have added the constant of 4 that was previously forgotten
                 M[i,j] = 4.0 * 0.5 * (I_top + I_bot) * d
+        # Integrate from r[-1] to infinity, assuming rho ~ 1 / r^2
+        def f(r): 
+            m = 4 * ri * r / (r + ri)**2
+            return special.ellipk(m) / (r + ri) / r
+        I, eps = integrate.quad(f, r[-1], np.inf, limit=100)
+        K[i, -1] += I * 4.0 * r[-1] * r[i]
     return M
 
 def kernel(r):
