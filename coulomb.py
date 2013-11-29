@@ -2,8 +2,7 @@ from numpy import *
 from pylab import * 
 from scipy import special
 
-
-def coulombkernel(r): 
+def do_coulombkernel(r): 
     N = len(r)
     M = zeros((N,N))
     for i in range (0,N):
@@ -19,8 +18,9 @@ def coulombkernel(r):
                     Ldr    =  Dr * math.log(1.0 / Dr**2)
                     Lconst =  2.0 * Dr * math.log(4.0)
                     Lplus  =  2.0 * Dr
-
-                    M[i,j] = 0.5 * (Ldr + Lplus + Lconst)
+                    # Should it be 4.0, to match the factor
+                    # in the end? 
+                    M[i,j] = 0.5 * (Ldr + Lplus + Lconst) * 4.0 
             else:
                 if j == 0:
 		     a = r_j
@@ -44,6 +44,21 @@ def coulombkernel(r):
                 M[i,j] = 4.0 * 0.5 * (I_top + I_bot) * d
     return M
 
+def kernel(r):
+    fname = "data/coulomb-kernel-Rmin=%g-Rmax=%g-N=%g.npz" % (r.min(), r.max(), len(r))
+    try:
+        data = np.load(fname)
+        print "Loading Coulomb kernel from", fname
+        print "Check r"
+        assert linalg.norm(r - data['r'])<1e-8, "r vectors match"
+        return data['C']
+    except:
+        import traceback
+        traceback.print_exc()
+        print "cannot load", fname, ": recalculating"
+        C = do_coulombkernel(r)
+        np.savez(fname, C=C, r=r)
+        return C
 
 if __name__ == '__main__':
     N = 1000
