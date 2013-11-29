@@ -155,7 +155,44 @@ def dos_bg(mvals, Ev, r):
         s *= 1.0
         bg[:, i] = s / 2.0 / np.pi * abs(E)
     return bg 
+
+def nFermi(E, E_F, T):
+    xi = np.exp(-abs(E - E_F) / T)
+    if (E > E_F): 
+        return xi / (1.0 + xi)
+    return 1.0 / (1.0 + xi)
+
+def bandDensity(r, U, mlist, B, Emin, Emax, T):
+    Nr = len(r)
+    Nm = len(mlist)
+    Ns = 2 * Nr
     
+    density = np.zeros ((Nr))
+    
+    timestart1 = time.time() 
+    
+    def n_band(Ei):
+        return nFermi(Ei, Emax, T) - nFermi(Ei, Emin, T)
+    
+    for i_m, m in enumerate(mlist): 
+        Bwvals = [(B, 1.0), (-B, 1.0)]
+        if (abs(B) < 1e-2 * 1.0 / np.max(r)**2): # magnetic length too large
+            Bwvals = [(0.0, 2.0)]
+        
+        for Bvalue, weight in Bwvals:
+            E, d = solveDirac(r, U, m, Bvalue)
+            X = np.vectorize(n_band)(E); 
+            density += weight * np.dot(d, X)
+            #for i in range(N_e):
+                #density[:]
+                #X = A / (gam**2 + (Ev[i] - E)**2)**2       
+                #X = np.exp(-(Ev[i] - E)**2/gam**2) * np.sqrt(1.0/np.pi)/gam; 
+                #LDOS[:, i] += weight * np.dot(d, X)
+    #LDOS += dos_bg(np.max(mlist) + 1, 100, Ev, r)
+    #LDOS = dos_bg(0, 100, Ev, r)
+    return density
+    
+
 def diracLDOS(Ev, r, U, mlist, B, gam):
     Nr = len(r)
     Nm = len(mlist)
@@ -181,17 +218,14 @@ def diracLDOS(Ev, r, U, mlist, B, gam):
     #LDOS = dos_bg(0, 100, Ev, r)
     return LDOS
 
-def nFermi(E, E_F, T):
-    xi = np.exp(-abs(E - E_F) / T)
-    if (E > E_F): 
-        return xi / (1.0 + xi)
-    return 1.0 / (1.0 + xi)
 
 def find_rho2(E, density, r, Emin, Emax, T):
     nf = np.vectorize(lambda x: nFermi(x, Emax, T) - nFermi(x, Emin, T))(E)
     print np.shape(nf), np.shape(density)
     return np.dot(density, nf)
     
+
+
 def find_rho(Ev, r, ldos, E_min, E_max):
     i_max = (np.abs(Ev - E_max)).argmin()
     i_min = (np.abs(Ev - E_min)).argmin()
