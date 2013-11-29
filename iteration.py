@@ -95,7 +95,7 @@ def pylab_callback(it, r, U, rho, U1, rho1):
                     #pl.legend()
                     pl.show()
                     
-def solve_coulomb(rho_U, U0, r, tau_u_set, tau_rho_set, **kwarg):
+def solve_coulomb(rho_U, Uext, r, tau_u_set, tau_rho_set, **kwarg):
            
     params = {
        'it'               : 0,
@@ -105,6 +105,7 @@ def solve_coulomb(rho_U, U0, r, tau_u_set, tau_rho_set, **kwarg):
     } 
     
     params.update(kwarg)
+    print params
     
     zero_endpoint = params['zero_endpoint']
     it            = params['it']
@@ -113,7 +114,7 @@ def solve_coulomb(rho_U, U0, r, tau_u_set, tau_rho_set, **kwarg):
     
     rexp = util.make_exp_grid(r.min(), r.max(), len(r))
     C = coulomb.kernel( rexp )
-    U = np.array( U0 )
+    U = np.array( Uext )
     rho = np.zeros( (len(r)) )
     it = 0
     j = 0
@@ -121,6 +122,7 @@ def solve_coulomb(rho_U, U0, r, tau_u_set, tau_rho_set, **kwarg):
     
     def mkFilename(it):
        fname = fname_template % (it)
+       print "fname: ", fname
        return fname
     
     if it > 0: # Load previous solution, if possible
@@ -135,11 +137,11 @@ def solve_coulomb(rho_U, U0, r, tau_u_set, tau_rho_set, **kwarg):
         
         it += 1
         
-        rho = util.gridswap(r,rexp,rho)
-        U1 = np.dot( C, rho)
-        U1 = util.gridswap(rexp, r, U1)
-        rho = util.gridswap(rexp,r,rho)
-        U1 += U0
+        rho = util.gridswap(r, rexp, rho)
+        U1 = np.dot( C, rho )
+        U1 = util.gridswap(rexp,  r, U1)
+        rho = util.gridswap(rexp, r, rho)
+        U1 += Uext
         
         if zero_endpoint: U1 -= U1[-1];
         
@@ -173,8 +175,8 @@ if __name__ == '__main__':
    r_0 = 1.0
    
    import util
-   #rexp = util.make_exp_grid(rmin, rmax, N)
-   r = np.array(rexp)
+   r = util.make_exp_grid(rmin, rmax, N)
+   #r = np.array(rexp)
    #print rexp
    print r
    #import sys
@@ -186,9 +188,9 @@ if __name__ == '__main__':
    def rho_minus12(U, r):
        return -U / r / 2.0 / np.pi**2 * Nf * alpha
 
-   U0 = Z / np.sqrt (r**2 + r_0**2)
+   Uext = Z / np.sqrt (r**2 + r_0**2)
 
-   U, rho = solve_coulomb(rho_minus12, U0, r, tau_u_set, tau_rho_set) 
+   U, rho = solve_coulomb(rho_minus12, Uext, r, tau_u_set, tau_rho_set) 
    
    ra = 5.0
    rb = 15.0
