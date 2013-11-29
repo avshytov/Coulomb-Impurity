@@ -303,7 +303,7 @@ def mk_inter_spline():
    
 def do_RPA_inter(r):
     """
-       Calculate the intraband kernel
+       Calculate the interband kernel
     """
     integrate_all = False
     Qs = mk_inter_spline()
@@ -417,7 +417,7 @@ def RPA_inter(r):
     fname = "rpakernel-inter-Rmin=%g-Rmax=%g-N=%g.dat.npz" % (Rmin, Rmax, N)
     try: 
         data = np.load(fname)
-        print "Intraband kernel loaded from", fname
+        print "Interband kernel loaded from", fname
         assert linalg.norm(r - data['r']) < 1e-6, "r grids are different"
         return data['Q']
     except:
