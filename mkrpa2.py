@@ -253,7 +253,7 @@ def RPA_intra(r, kF):
     Rmin = r.min()
     Rmax = r.max()
     N = len(r)
-    fname = "rpakernel-intra-kF=%g-Rmin=%g-Rmax=%g-N=%d.dat.npz" % (kF, Rmin, Rmax, N)
+    fname = "data/rpakernel-intra-kF=%g-Rmin=%g-Rmax=%g-N=%d.dat.npz" % (kF, Rmin, Rmax, N)
     try: 
         data = np.load(fname)
         print "Intraband kernel loaded from", fname
@@ -414,7 +414,7 @@ def RPA_inter(r):
     Rmin = r.min()
     Rmax = r.max()
     N = len(r)
-    fname = "rpakernel-inter-Rmin=%g-Rmax=%g-N=%g.dat.npz" % (Rmin, Rmax, N)
+    fname = "data/rpakernel-inter-Rmin=%g-Rmax=%g-N=%g.dat.npz" % (Rmin, Rmax, N)
     try: 
         data = np.load(fname)
         print "Interband kernel loaded from", fname
