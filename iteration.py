@@ -137,10 +137,9 @@ def solve_coulomb(rho_U, Uext, r, tau_u_set, tau_rho_set, **kwarg):
         
         it += 1
         
-        rho = util.gridswap(r, rexp, rho)
-        U1 = np.dot( C, rho )
+        U1 = np.dot( C, util.gridswap(r, rexp, rho ) )
         U1 = util.gridswap(rexp,  r, U1)
-        rho = util.gridswap(rexp, r, rho)
+        #rho = util.gridswap(rexp, r, rho)
         U1 += Uext
         
         if zero_endpoint: U1 -= U1[-1];
@@ -160,6 +159,9 @@ def solve_coulomb(rho_U, Uext, r, tau_u_set, tau_rho_set, **kwarg):
         display_callback(it, r, U, rho, U1, rho1)
         
         if (err_U < (1e-7)) and (err_rho < (1e-7)):
+            break
+        if (err_U > 1e+6) or (err_rho > 1e+6): 
+            print "A clear divergence"
             break
 
     return U, rho
