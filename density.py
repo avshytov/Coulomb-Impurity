@@ -16,10 +16,10 @@ import mkrpa2
 #    return rho_0
     
 def RPA_kernel(r, kF):
-    Q = mkrpa2.RPA_inter(r)  
+    Q_rpa = mkrpa2.RPA_inter(r)  
     if (kF * r.max() > 0.01):
-        Q += mkrpa2.RPA_intra(r, kF)
-    return Q
+        Q_rpa += mkrpa2.RPA_intra(r, kF)
+    return Q_rpa
 
 class GrapheneResponse:
     def __init__ (self, r, Ef, **kwargs):
@@ -54,8 +54,8 @@ class GrapheneResponse:
         return (rho_b - self.rho_0) * self.F
         
     def apply_kernel(self, Q, U):
-        Uexp = util.gridswap(self.r, self.rexp, U)
-        rho_exp = np.dot(Q, Uexp)
+        U_exp = util.gridswap(self.r, self.rexp, U)
+        rho_exp = np.dot(Q, U_exp)
         return util.gridswap(self.rexp, self.r, rho_exp)
     
     def rho_RPA(self, U):
@@ -77,10 +77,10 @@ class GrapheneResponse:
     
     def seaContribution(self, U):
         rho = np.zeros(np.shape(U))
-        #rho  = self.highm( self.Emax,  U)
-        #rho -= self.highm( self.Emin,  U)
+        rho  = self.highm( self.Emax,  U)
+        rho -= self.highm( self.Emin,  U)
         
-        #rho += -U**2 / 4.0 / np.pi # Quadratic contribution
+        rho += -U**2 / 4.0 / np.pi # Quadratic contribution
         
         rho += self.apply_kernel(self.Q_Emin, U) 
         return rho
@@ -88,10 +88,10 @@ class GrapheneResponse:
     def rho_U(self, U):    
         rho  = self.bandResponse(U)
         rho += self.seaContribution(U) 
-        #Rmax = 20.0
-        #imax = np.abs(r - Rmax).argmin()
-        #rho_rpa = self.apply_kernel(self.Q_Emax, U)
-        #rho[imax:] = rho_rpa[imax:]
+        Rmax = 5.0
+        imax = np.abs(self.r - Rmax).argmin()
+        rho_rpa = self.apply_kernel(self.Q_Emax, U)
+        rho[imax:] = rho_rpa[imax:]
         return rho 
 
 
@@ -125,5 +125,12 @@ if __name__ == '__main__':
    pl.plot(r, rho_U,   label='response from sim')
    pl.plot(r, rho_Ub,   label='response from sim (band)')
    pl.plot(r, rho_th,  label='expected')
+   pl.legend()
+   pl.figure()
+   pl.loglog(r, np.abs(rho_RPA), label='RPA response (full)')
+   pl.loglog(r, np.abs(rho_RPAb), label='RPA response (band)')
+   pl.loglog(r, np.abs(rho_U),   label='response from sim')
+   pl.loglog(r, np.abs(rho_Ub),   label='response from sim (band)')
+   pl.loglog(r, np.abs(rho_th),  label='expected')
    pl.legend()
    pl.show()
