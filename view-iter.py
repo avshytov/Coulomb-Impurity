@@ -33,7 +33,7 @@ if __name__ == '__main__':
               iter = int(field[3:])
               datasets.append((f, iter))
            if field[:2] == 'Z=':
-              Z = float(field[3:])
+              Z = float(field[2:])
    # Sort data sets
    datasets.sort(lambda x, y: cmp(x[1], y[1]))
    Ndata = min(2, len(datasets))
