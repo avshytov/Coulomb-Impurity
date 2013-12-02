@@ -49,7 +49,7 @@ def F_intra2(r1, r2, kF):
     """
         Integration routine --- for internal use in Q_intra
     """
-    s = 1.0 # np.max([r1 * kF, r2 * kF, 1.0])
+    s = np.max([r1 * kF, r2 * kF, 1.0])
     #
     # First, handle the difference between Pi_intra 
     # and 2/3 1/(q^2 + 1)
@@ -78,12 +78,12 @@ def F_intra2(r1, r2, kF):
     return (I + I2) * kF**3 / (4.0 * math.pi**2)
 
 def G2_intra(r, kF): # xi == kF * r
-    #print "r, KF = ", r, kF
+    print "r, KF = ", r, kF
     #print r1, r2, kF
     """
         Integration routine --- for internal use in Q_intra
     """
-    s = 1.0 # np.max([kF * r, 1.0])
+    s = np.max([kF * r, 1.0])
     #
     # First, handle the difference between Pi_intra 
     # and 2/3 1/(q^2 + 1)
@@ -118,7 +118,7 @@ def F_intra(r1, r2, kF):
         way. This routine is slow and less reliable than F_intra2
         Provided mostly for testing F_intra2
     """
-    s = 1.0 # max(kF * r1, kF * r2, 1.0)
+    s = max(kF * r1, kF * r2, 1.0)
     def f(x):
         J1 = special.jn(0, x * kF * r1 / s)
         J2 = special.jn(0, x * kF * r2 / s)
@@ -135,7 +135,7 @@ def mk_intra_spline(kF, rmax):
     yvals = np.vectorize(lambda x: G2_intra(x/kF, kF))(xvals)
     #print xvals, yvals
     spl = interpolate.splrep(xvals, yvals)
-    if True:
+    if False:
        import pylab
        pylab.figure()
        pylab.plot(xvals, yvals)
@@ -243,7 +243,7 @@ def do_RPA_intra(r, kF):
         Q1[i, 0] += F_intra2(r[i], 0.0, kF)* r[0]**2 / 2.0
         
         print "sum: ", sum(Q1[i, :]) * 4.0 * math.pi**2 # must be one
-        if True and i % 20 == 0:
+        if False and i % 20 == 0:
            import pylab
            pylab.figure()
            pylab.plot(r, Q1[i, :], label='r = %g' % r[i])
@@ -436,7 +436,7 @@ def RPA_inter(r):
         return Q
 
 if __name__ == '__main__':
-   if True:
+   if False:
       kF0  = 0.3 
       testF(1.0, 2.0, kF0)
       testF(1.0, 10.0, kF0)
