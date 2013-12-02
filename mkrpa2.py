@@ -49,7 +49,7 @@ def F_intra2(r1, r2, kF):
     """
         Integration routine --- for internal use in Q_intra
     """
-    s = np.max([r1 * kF, r2 * kF, 1.0])
+    s = 1.0 # np.max([r1 * kF, r2 * kF, 1.0])
     #
     # First, handle the difference between Pi_intra 
     # and 2/3 1/(q^2 + 1)
@@ -57,7 +57,7 @@ def F_intra2(r1, r2, kF):
     def f(x):
         J1 = special.jn(0, x * kF * r1 / s)
         J2 = special.jn(0, x * kF * r2 / s)
-        return Pi_intra2(kF * x / s) * J1 * J2 * x / s**2
+        return Pi_intra2(x / s) * J1 * J2 * x / s**2
     #print r1, r2
     I, eps = integrate.quad(f, 0.0, np.Inf, limit=300)
     
@@ -78,19 +78,19 @@ def F_intra2(r1, r2, kF):
     return (I + I2) * kF**3 / (4.0 * math.pi**2)
 
 def G2_intra(r, kF): # xi == kF * r
-    print "r, KF = ", r, kF
+    #print "r, KF = ", r, kF
     #print r1, r2, kF
     """
         Integration routine --- for internal use in Q_intra
     """
-    s = np.max([kF * r, 1.0])
+    s = 1.0 # np.max([kF * r, 1.0])
     #
     # First, handle the difference between Pi_intra 
     # and 2/3 1/(q^2 + 1)
     #
     def f(x):
         J1 = special.jn(0, x * kF * r / s)
-        return Pi_intra2(x * kF / s) * J1 * x / s**2
+        return Pi_intra2(x / s) * J1 * x / s**2
     #print r1, r2
     I, eps = integrate.quad(f, 0.0, np.Inf, limit=300)
     
@@ -108,7 +108,7 @@ def G2_intra(r, kF): # xi == kF * r
     I2 = special.kn(0, kF * r)
     I2 *=  2.0 / 3.0 
     
-    #print "In F2: ", I, I2
+    #print "In G2: ", I, I2
     return (I + I2) * kF**3 / (4.0 * math.pi**2)
 
 def F_intra(r1, r2, kF):
@@ -118,27 +118,33 @@ def F_intra(r1, r2, kF):
         way. This routine is slow and less reliable than F_intra2
         Provided mostly for testing F_intra2
     """
-    s = max(kF * r1, kF * r2, 1.0)
+    s = 1.0 # max(kF * r1, kF * r2, 1.0)
     def f(x):
         J1 = special.jn(0, x * kF * r1 / s)
         J2 = special.jn(0, x * kF * r2 / s)
-        return Pi_intra(kF * x / s) * J1 * J2 * x / s**2
+        return Pi_intra(x / s) * J1 * J2 * x / s**2
     I, eps = integrate.quad(f, 0.0, np.Inf, limit=10000)
     I2 = 0.0
-    print "In F1:", I
+    #print "In F1:", I
     return (I + I2) * kF**3 / (4.0 * math.pi**2)
 
     
     
 def mk_intra_spline(kF, rmax):
-    xvals = np.arange(0.001, max(kF * rmax, 1.0), 0.03)
-    yvals = np.vectorize(lambda r: G2_intra(r, kF))(xvals)
-    print xvals, yvals
+    xvals = np.arange(0.001, max(kF*rmax, 1.0), 0.03)
+    yvals = np.vectorize(lambda x: G2_intra(x/kF, kF))(xvals)
+    #print xvals, yvals
     spl = interpolate.splrep(xvals, yvals)
+    if True:
+       import pylab
+       pylab.figure()
+       pylab.plot(xvals, yvals)
+       pylab.title("F_intra spline")
+       pylab.show()
     def F_intra(r1, r2):
         def f_theta(theta):
             R = math.sqrt(r1**2 + r2**2 + 2.0 * r1 * r2 * math.cos(theta))
-            return interpolate.splev(R, spl, der=0)
+            return interpolate.splev(R*kF, spl, der=0)
         I, eps = integrate.quad(f_theta, 0, math.pi) 
         return I  / math.pi
     return F_intra
@@ -153,6 +159,7 @@ def testG(r1vals, r2vals, kF):
         Gvals  = np.vectorize(lambda r2: Gfun(r1, r2))(r2vals)
         pylab.plot (r2vals, F2vals, label='F2')
         pylab.plot (r2vals, Gvals, label='G')
+        pylab.legend()
         pylab.title('r1 = %g' % r1)
     pylab.show()
 
@@ -180,7 +187,7 @@ def do_RPA_intra(r, kF):
     #if True: 
     #   pylab.figure()
     integrate_all = False
-    dr0 = 0.5
+    dr0 = min(0.5/kF, 0.5)
     Gfun = mk_intra_spline(kF, max(r) * 2.0)
     for i in range(len(r)):
         print "Qintra:", i
@@ -236,7 +243,7 @@ def do_RPA_intra(r, kF):
         Q1[i, 0] += F_intra2(r[i], 0.0, kF)* r[0]**2 / 2.0
         
         print "sum: ", sum(Q1[i, :]) * 4.0 * math.pi**2 # must be one
-        if False and i % 20 == 0:
+        if True and i % 20 == 0:
            import pylab
            pylab.figure()
            pylab.plot(r, Q1[i, :], label='r = %g' % r[i])
@@ -429,21 +436,22 @@ def RPA_inter(r):
         return Q
 
 if __name__ == '__main__':
-   if False:
-      testG([1.0, 2.0, 3.0, 5.0, 10.0], np.arange(0.01, 10.0, 0.1), 1.0)
-   if False:
-      testF(1.0, 2.0, 1.0)
-      testF(1.0, 10.0, 1.0)
-      testF(1.0, 1.1, 1.0)
+   if True:
+      kF0  = 0.3 
+      testF(1.0, 2.0, kF0)
+      testF(1.0, 10.0, kF0)
+      testF(1.0, 1.1, kF0)
+   if True:
+      testG([1.0, 2.0, 3.0, 5.0, 10.0], np.arange(0.01, 10.0, 0.1), 0.3)
    if False:
       show_pi()
    
    rmin = 0.01
-   rmax = 100.0
-   N = 200
+   rmax = 50.0
+   N = 500
    r = rmin * np.exp(math.log(rmax/rmin)/(N - 1.0) * np.arange(0, N, 1.0))
    #r = np.arange(0.01, 10.0, 0.01)
-   kF = 1.0
+   kF = 0.3
    Q_inter = RPA_inter(r)
    Q_intra  = RPA_intra(r, kF)
    r_0 = 1.0
