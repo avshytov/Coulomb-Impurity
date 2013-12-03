@@ -1,0 +1,65 @@
+import math
+import numpy as np
+import scipy 
+from scipy import special
+from pylab import *
+
+
+def odewf(E,r,U,m):
+    chi_u = np.zeros(shape(r), dtype=complex)
+    chi_d = np.zeros(shape(r), dtype=complex)
+    
+    if m >= 0:
+        mu = m
+        print 'mu =', mu
+        chi_u[0] = 1.0
+        chi_d[0] = 0.0
+    elif m < 0:        
+        mu = -m-1
+        print 'mu =', mu
+        chi_u[0] = 0.0
+        chi_d[0] = 1.0
+    def rhs(chi_u, chi_d, r, U): 
+        f_u = (m-mu)/r * chi_u - (E - U)*chi_d
+        f_d = (E - U)*chi_u - (1 + mu + m)/r * chi_d
+        return f_u,f_d
+    for i in range(1,len(r)):
+        chi_up, chi_dp = chi_u[i-1], chi_d[i-1]
+        h = r[i] - r[i-1]
+        r1 = r[i-1]
+        r2 = r[i-1] + 0.5 * h
+        r3 = r2
+        r4 = r[i]
+        U1 = U[i-1]
+        U2 = 0.5*(U[i-1]+U[i])
+        U3 = U2
+        U4 = U[i]
+        k1u, k1d = rhs(chi_up, chi_dp, r1, U1)
+        k2u, k2d = rhs(chi_up+k1u*0.5*h, chi_dp+0.5*k1d*h, r2, U2)
+        k3u, k3d = rhs(chi_up+k2u*0.5*h, chi_dp+0.5*k2d*h, r3, U3)
+        k4u, k4d = rhs(chi_up+k3u*h, chi_dp+k3d*h, r4 ,U4)
+        
+        chi_un = chi_up + h*(k1u + 2*k2u + 2*k3u + k4u)/6.0
+        chi_dn = chi_dp + h*(k1d + 2*k2d + 2*k3d + k4d)/6.0
+
+        chi_u[i], chi_d[i] = chi_un, chi_dn
+
+    rho = abs(chi_u)**2 + abs(chi_d)**2 
+    return rho
+
+def plotode():
+    r = np.arange(0.03, 10.0, 0.03)
+    U = 0.0 * r
+    E = 1.0
+    m = 1
+    rho = odewf(E,r,U,m)
+    rho_0 = special.jn(m, E*r - r*U)**2 + special.jn(m+1, E*r - r*U)**2
+    title('Charge Density')
+    plot(r, (r)**2*rho, label='rho from ode m=%d' %m)
+    plot(r, rho_0, 'r--', label='bessel')
+    plot(r, r**2*rho / rho_0)
+    legend()
+    show()
+
+if __name__ == '__main__':
+    plotode()
