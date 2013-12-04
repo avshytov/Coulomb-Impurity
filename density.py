@@ -9,7 +9,7 @@ from scipy.interpolate import splev, splrep
 from diracsolver import (makeDirac, solveDirac, dos_bg, diracLDOS, find_rho, getDensity,
                          prepareLDOS, bandDensity)
 import mkrpa2
-
+from odedirac import (_sgn, odedos_m, doscalc, rhocalc) 
 
 #def backgroundDensity(r, mlist, Temp):
 #    rho_0 = bandDensity(r, 0.0 * r, mlist, BTemp)
@@ -41,14 +41,21 @@ class GrapheneResponse:
         self.Q_Emin = RPA_kernel(self.rexp, abs(self.Emin))
         self.Q_Emax = RPA_kernel(self.rexp, abs(self.Emax))
         self.rho_0 = self.diracDensity(np.zeros(np.shape(r)))
-        #### Correction
+        #### Correction removed ####
         N = len(self.r)
-        self.F = 1.01340014 + 0.05991426 / np.sqrt(N) + 7.12091516 / N 
+        self.F = 1.0  ### 1340014 + 0.05991426 / np.sqrt(N) + 7.12091516 / N 
         
-    def diracDensity(self, U):
-        return bandDensity(self.r, U, self.mlist, self.B, 
-                           self.Emin, self.Emax, self.Temp)
-                           
+    
+    if False:
+        def diracDensity(self, U):
+            return bandDensity(self.r, U, self.mlist, self.B, 
+                               self.Emin, self.Emax, self.Temp)
+    
+    if True:
+        def diracDensity(self, U):
+            return rhocalc(self.Emin, self.Emax, self.r, 
+                           U, self.mlist)
+                       
     def bandResponse(self, U):
         rho_b = self.diracDensity(U)
         return (rho_b - self.rho_0) * self.F
@@ -100,7 +107,7 @@ if __name__ == '__main__':
    rmax = 40.0
    N = 200
    r = util.make_lin_grid(rmin, rmax, N) 
-   graphene = GrapheneResponse(r, 0.0, Ecut=-1.5)
+   graphene = GrapheneResponse(r, -1e-4, Ecut=-1.5)
    
    Z = 0.25
    r_0 = 1.0
