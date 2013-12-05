@@ -118,10 +118,48 @@ if __name__ == '__main__':
    rho_U   = graphene.rho_U(U)
    rho_Ub  = graphene.bandResponse(U) 
    rho_RPAb = graphene.apply_kernel(graphene.Q_Emax - graphene.Q_Emin, U)
-   
-   import pylab as pl
    rho_0 = (graphene.Emax**2 - graphene.Emin**2) / 4.0 / math.pi
-   rho_1 = graphene.diracDensity(U)
+   rho_1 = graphene.diracDensity(U)   
+
+   if True:
+       imin = 0
+       imax = 199
+       rmin = r[0]
+       rmax = r[-1]
+       dr = r[imin+1]-r[imin]
+       Ugrid = []
+       Qtots = []
+       Qths = []
+       print 'Total Charge Calculation: rmin=', rmin, 'rmax=', rmax
+       for Z0 in [0.1, 0.2, 0.3, 0.4, 0.5]:
+           print 'Calculating for Z0=',Z0 
+           Ugrid.append(Z0)
+           Qtheory = (( 1.0 / np.sqrt(r_0**2+rmin**2))
+                      - (1.0/ np.sqrt(r_0**2 + rmax**2)))
+           Qtheory *= Z0 * np.pi / 8.0
+           Us = Z0 / np.sqrt(r**2 + r_0**2)
+           rhotot = graphene.rho_U(Us)
+           
+           import pylab as pl
+           pl.title('Total density for Z0=%g'%Z0)
+           pl.plot(r,rhotot, label='total charge density')
+           pl.legend()
+           pl.show()
+           pl.figure()
+
+           Qsim = 0.5 * dr * rhotot[imin] * r[imin]
+           Qsim += 0.5 * dr * rhotot[imax] * r[imax]
+           for i in range (imin+1, imax):
+               Qsim += dr * rhotot[i] * r[i]
+           Qsim *= -2.0 * np.pi
+           Qtots.append(Qsim)
+           Qths.append(Qtheory)
+       Ugrid = np.array(Ugrid)
+       Q_sim = np.array(Qtots)
+       Q_linear = np.array(Qths)
+       Q_bs = (np.pi/8.0*Ugrid + 0.19*Ugrid**3)
+
+   import pylab as pl
    pl.plot(graphene.r, graphene.rho_0, label='rho_0')
    pl.plot(graphene.r,          rho_1, label='rho_0 + U')
    pl.plot(graphene.r, graphene.rho_0 + rho_U, label='sum')
@@ -139,5 +177,10 @@ if __name__ == '__main__':
    pl.loglog(r, np.abs(rho_U),   label='response from sim')
    pl.loglog(r, np.abs(rho_Ub),   label='response from sim (band)')
    pl.loglog(r, np.abs(rho_th),  label='expected')
+   pl.legend()
+   pl.figure()
+   pl.plot(Ugrid, Q_sim, label='sim')
+   pl.plot(Ugrid, Q_linear, label='Linear')
+   pl.plot(Ugrid, Q_bs, label='B-S')
    pl.legend()
    pl.show()
