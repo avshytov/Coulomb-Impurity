@@ -32,7 +32,7 @@ class GrapheneResponse:
         }
         params.update(**kwargs)
         self.Emin = min(Ef, params['Ecut']) # Ecut could be both positive
-        self.Emax = max(Ef, parms['Ecut'])  # and negative
+        self.Emax = max(Ef, params['Ecut']) # and negative
         self.Temp = params['Temp']
         self.r    = r
         self.rexp = util.make_exp_grid(r.min(), r.max(), len(r))
