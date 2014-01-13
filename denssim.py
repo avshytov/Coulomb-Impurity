@@ -15,7 +15,7 @@ rmin = 0.01
 rmax = 50.0
 
 r = util.make_lin_grid(rmin, rmax, N)
-Ef = 0.0
+Ef = -1e-4
 B0 = 0.0
 Ecut = -3.0
 Z = 0.5
@@ -26,7 +26,7 @@ tau_rho_set = list(tau_u_set)
 Uext = Z / np.sqrt(r**2 + r_0**2)
 rho_ext = -Z / 16.0 / np.sqrt(r**2 + r_0**2)**3  
 
-graphene = density.GrapheneResponse (r, Ef)
+graphene = density.GrapheneResponse (r, Ef, Ecut=Ecut, Mmax=Mmax)
 
 Nf = 4
 alpha = 0.9
