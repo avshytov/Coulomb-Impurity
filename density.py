@@ -9,6 +9,7 @@ from scipy.interpolate import splev, splrep
 from diracsolver import (makeDirac, solveDirac, dos_bg, diracLDOS, find_rho, getDensity,
                          prepareLDOS, bandDensity)
 import mkrpa2
+import rpakernel
 from odedirac import (_sgn, odedos_m, doscalc, rhocalc) 
 
 #def backgroundDensity(r, mlist, Temp):
@@ -27,25 +28,32 @@ class GrapheneResponse:
            'Temp'   : 0.01, 
             'Ecut'  : -1.5, 
             'B'     : 0.0, 
-            'Mmax'  : 10
+            'Mmax'  : 16
         }
         params.update(**kwargs)
-        self.Emin = params['Ecut']
-        self.Emax = Ef
+        self.Emin = min(Ef, params['Ecut']) # Ecut could be both positive
+        self.Emax = max(Ef, parms['Ecut'])  # and negative
         self.Temp = params['Temp']
         self.r    = r
         self.rexp = util.make_exp_grid(r.min(), r.max(), len(r))
         self.B = params['B']
         self.mlist =  np.array(range(0, params['Mmax']))
         
-        self.Q_Emin = RPA_kernel(self.rexp, abs(self.Emin))
-        self.Q_Emax = RPA_kernel(self.rexp, abs(self.Emax))
+        if False:  # Use this to skip kernel calculation; helpful in debugging
+           self.Q_Emin = np.zeros((len (self.rexp), len(self.rexp)))#RPA_kernel(self.rexp, abs(self.Emin))
+           self.Q_Emax = np.zeros(np.shape(self.Q_Emin)) #RPA_kernel(self.rexp, abs(self.Emax))
+           self.Qm_Emax = np.zeros(np.shape(self.Q_Emin))#rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emax))
+           self.Qm_Emin = np.zeros(np.shape(self.Q_Emax))#rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emin))
+        else:
+           # Full RPA kernel
+           self.Q_Emin  = RPA_kernel(self.rexp, abs(self.Emin))
+           self.Q_Emax  = RPA_kernel(self.rexp, abs(self.Emax))
+           # m-resolved RPA kernel
+           self.Qm_Emax = rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emax))
+           self.Qm_Emin = rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emin))
         self.rho_0 = self.diracDensity(np.zeros(np.shape(r)))
-        #### Correction removed ####
         N = len(self.r)
-        self.F = 1.0  ### 1340014 + 0.05991426 / np.sqrt(N) + 7.12091516 / N 
-        
-    
+          
     if False:
         def diracDensity(self, U):
             return bandDensity(self.r, U, self.mlist, self.B, 
@@ -68,7 +76,15 @@ class GrapheneResponse:
     def rho_RPA(self, U):
         return self.apply_kernel(self.Q_Emax, U)
     
-    def highm(self, E, U):
+    def rho_RPA_m(self, U):
+        return self.apply_kernel(self.Qm_Emax - self.Qm_Emin, U)
+    
+    def highm(self, U): # Calculation of high-m correction within RPA
+        Qmax =  self.Q_Emax - self.Qm_Emax
+        Qmin =  self.Q_Emin - self.Qm_Emin
+        return -self.apply_kernel(Qmax - Qmin, U)
+        
+    def highm_old(self, E, U): # old way to calculate high-m correction
         Mmax = self.mlist[-1]
         Jsum = np.zeros((len(self.r)))
         Efr = E + U/2.0
@@ -81,13 +97,26 @@ class GrapheneResponse:
         drhohm *= -abs(E) / 4.0 / np.pi * U
         return drhohm
 
+    def highm2(self, U): # calculate quadratic part of high-m correction
+        eps = 1e-5 
+        highm_max1 = self.highm_old(self.Emax + eps, U)
+        highm_max2 = self.highm_old(self.Emax - eps, U)
+        highm_min1 = self.highm_old(self.Emin + eps, U)
+        highm_min2 = self.highm_old(self.Emin - eps, U)
+        dnu_max = (highm_max1 - highm_max2) / 2.0 / eps * _sgn(self.Emax)
+        dnu_min = (highm_min1 - highm_min2) / 2.0 / eps * _sgn(self.Emin)
+        return (dnu_max - dnu_min) * U / 2.0;
+    
     
     def seaContribution(self, U):
+        sgnE = 1.0
+        if (self.Emin < 0): sgnE = -1.0
         rho = np.zeros(np.shape(U))
-        rho  = self.highm( self.Emax,  U)
-        rho -= self.highm( self.Emin,  U)
+        rho = self.highm(U) * sgnE + self.highm2(U)
+        #rho  = self.highm( self.Emax,  U)
+        #rho -= self.highm( self.Emin,  U)
         
-        rho += -U**2 / 4.0 / np.pi # Quadratic contribution
+        rho += U**2 / 4.0 / np.pi * sgnE # Quadratic contribution
         
         rho += self.apply_kernel(self.Q_Emin, U) 
         return rho
@@ -95,7 +124,7 @@ class GrapheneResponse:
     def rho_U(self, U):    
         rho  = self.bandResponse(U)
         rho += self.seaContribution(U) 
-        Rmax = 5.0
+        Rmax = 30.0
         imax = np.abs(self.r - Rmax).argmin()
         rho_rpa = self.apply_kernel(self.Q_Emax, U)
         rho[imax:] = rho_rpa[imax:]
@@ -103,11 +132,13 @@ class GrapheneResponse:
 
 
 if __name__ == '__main__':
-   rmin = 0.02
-   rmax = 40.0
-   N = 200
+   rmin = 0.01
+   rmax = 50.0
+   N = 500
    r = util.make_lin_grid(rmin, rmax, N) 
-   graphene = GrapheneResponse(r, -1e-4, Ecut=-1.5)
+   Ef = -0.2
+   Ecut = -3.0
+   graphene = GrapheneResponse(r, -1e-4, Ecut=Ecut, Mmax=31)
    
    Z = 0.25
    r_0 = 1.0
