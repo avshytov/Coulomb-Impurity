@@ -28,7 +28,14 @@ def odedos_m(E,r,U,m):
 
     chi_u[0, :], chi_d[0, :] = psireg(r[0], E - U[0])
 
-    nchi = np.sqrt(chi_u[0, :]**2 + chi_d[0, :]**2)
+    #print E, U[0]
+    #print E-U[0]
+    
+    #print chi_u[0, :], chi_d[0, :]
+    nchi = np.abs(chi_u[0, :]) + np.abs(chi_d[0, :]) # this does not involve
+                                                     # squares of small numbers
+    #np.sqrt(chi_u[0, :]**2 + chi_d[0, :]**2)        # unlike prev version
+    #print nchi
     chi_u[0, :] /= nchi
     chi_d[0, :] /= nchi
 
