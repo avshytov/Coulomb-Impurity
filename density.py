@@ -66,7 +66,7 @@ class GrapheneResponse:
                        
     def bandResponse(self, U):
         rho_b = self.diracDensity(U)
-        return (rho_b - self.rho_0) * self.F
+        return (rho_b - self.rho_0) 
         
     def apply_kernel(self, Q, U):
         U_exp = util.gridswap(self.r, self.rexp, U)
