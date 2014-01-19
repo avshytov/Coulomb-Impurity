@@ -2,8 +2,8 @@ import math
 import numpy as np
 import scipy 
 from scipy import special
-
-
+import util 
+from util import * 
 
 def _sgn(x): 
     if x > 0: return 1.0
@@ -14,13 +14,13 @@ sgn = np.vectorize(_sgn)
 
 def odedos_m(E,r,U,m):
 
-    def psireg(r_i,E): ### Not normalised here
-        uu = special.jn(m, (E*r_i)) 
-        ud = special.jn(m+1, (E*r_i))
-        return uu,ud
-    def psising(r_i, E): ### Not normalised here
-        vu = special.yn(m, (np.abs(E)*r_i))
-        vd = sgn(E) * special.yn(m+1, (np.abs(E)*r_i))
+    def psireg(r_i, Ex): ### Not normalised here
+        uu = special.jn(m, (np.abs(Ex)*r_i)) 
+        ud = special.jn(m+1, (np.abs(Ex)*r_i)) * sgn(Ex)
+        return uu, ud
+    def psising(r_i, Ex): ### Not normalised here
+        vu = special.yn(m, (np.abs(Ex)*r_i))
+        vd = sgn(Ex) * special.yn(m+1, (np.abs(Ex)*r_i))
         return vu, vd
     
     chi_u = np.zeros((len(r), len(E)))
@@ -28,48 +28,79 @@ def odedos_m(E,r,U,m):
 
     chi_u[0, :], chi_d[0, :] = psireg(r[0], E - U[0])
 
-    #print E, U[0]
-    #print E-U[0]
-    
-    #print chi_u[0, :], chi_d[0, :]
     nchi = np.abs(chi_u[0, :]) + np.abs(chi_d[0, :]) # this does not involve
                                                      # squares of small numbers
-    #np.sqrt(chi_u[0, :]**2 + chi_d[0, :]**2)        # unlike prev version
-    #print nchi
+    np.sqrt(chi_u[0, :]**2 + chi_d[0, :]**2)         # unlike prev version
+
     chi_u[0, :] /= nchi
     chi_d[0, :] /= nchi
 
+    if False:
+        #### Bessel summation normalisation ####
+        xi = (E - U[0]) * r[0]                  
+        if m >= 0: 
+            chi_u[0, :] = 1.0
+            chi_d[0, :] = (xi / 2.0) / (m + 1.0)
+        else:
+            chi_u[0, :] = - (xi / 2.0) / m # CHECK!!! 
+            chi_d[0, :] = 1.0
+    
+    #print "chi_u = ", chi_u[0, :]
+    #print "chi_d = ", chi_d[0, :]
+    #from pylab import plot, show, legend
+    #plot (chi_u[0, :] - 1.0, label='chi_u')
+    #plot (chi_d[0, :], label='chi_d')
+    #legend()
+    #show()
+
     if m >= 0:
+        Ku = 0
+        Kd = -1.0 - 2.0 * m
         mu = m
-    #    chi_u[0] = 1.0
-    #    chi_d[0] = 0.0
     else:        
         mu = -m-1
-    #    print 'mu =', mu
-    #    chi_u[0] = 0.0
-    #    chi_d[0] = 1.0
-    def rhs(chi_u, chi_d, r, U): 
-        f_u = (m-mu)/r * chi_u - (E - U)*chi_d
-        f_d = (E - U)*chi_u - (1 + mu + m)/r * chi_d
+        Ku = 1.0 + 2.0 * m
+        Kd = 0
+    def rhs(chi_u, chi_d, r, U):
+        f_u = Ku / r * chi_u - (E - U)*chi_d
+        f_d = (E - U)*chi_u  + Kd / r * chi_d
+        #f_u = (m-mu)/r * chi_u - (E - U)*chi_d
+        #f_d = (E - U)*chi_u - (1 + mu + m)/r * chi_d
         return f_u,f_d
-    for i in range(1,len(r)):
-        chi_up, chi_dp = chi_u[i-1, :], chi_d[i-1, :]
-        h = r[i] - r[i-1]
-        r1 = r[i-1]
-        r2 = r[i-1] + 0.5 * h
+    def rk4step(chi_u, chi_d, r_p, r_n, h):
+        r1 = r_p
+        r2 = r_p + 0.5 * h
         r3 = r2
-        r4 = r[i]
-        U1 = U[i-1]
-        U2 = 0.5*(U[i-1]+U[i])
+        r4 = r_n
+     
+        rs = np.array([r1, r2, r3, r4])
+        Us = gridswap(r,rs,U)
+
+        U1 = Us[0]
+        U2 = Us[1]
         U3 = U2
-        U4 = U[i]
-        k1u, k1d = rhs(chi_up, chi_dp, r1, U1)
-        k2u, k2d = rhs(chi_up+k1u*0.5*h, chi_dp+0.5*k1d*h, r2, U2)
-        k3u, k3d = rhs(chi_up+k2u*0.5*h, chi_dp+0.5*k2d*h, r3, U3)
-        k4u, k4d = rhs(chi_up+k3u*h, chi_dp+k3d*h, r4 ,U4)
-        
-        chi_un = chi_up + h*(k1u + 2*k2u + 2*k3u + k4u)/6.0
-        chi_dn = chi_dp + h*(k1d + 2*k2d + 2*k3d + k4d)/6.0
+        U4 = Us[3]
+
+        k1u, k1d = rhs(chi_u, chi_d, r1, U1)
+        k2u, k2d = rhs(chi_u+k1u*0.5*h, chi_d+0.5*k1d*h, r2, U2)
+        k3u, k3d = rhs(chi_u+k2u*0.5*h, chi_d+0.5*k2d*h, r3, U3)
+        k4u, k4d = rhs(chi_u+k3u*h, chi_d+k3d*h, r4 ,U4)
+
+        chi_un = chi_u + h*(k1u + 2*k2u + 2*k3u + k4u)/6.0
+        chi_dn = chi_d + h*(k1d + 2*k2d + 2*k3d + k4d)/6.0
+        return chi_un, chi_dn
+
+    for i in range(1,len(r)):
+        chi_un, chi_dn = chi_u[i-1, :], chi_d[i-1, :]
+        h = r[i] - r[i-1]
+        dxi = max(abs(E)) * h
+        dxi0 = 0.1
+        n_steps = int(dxi / dxi0) + 1
+        dr = h / n_steps
+        for i_step in range(n_steps):
+            r_p = r[i-1] + i_step * dr
+            r_n = r[i-1] + (i_step + 1) * dr
+            chi_un, chi_dn = rk4step(chi_un, chi_dn, r_p, r_n, dr)
 
         chi_u[i, :], chi_d[i, :] = chi_un, chi_dn
 
@@ -78,7 +109,6 @@ def odedos_m(E,r,U,m):
     D = uu * vd - vu * ud
     A = (chi_u[-1, :] * vd - chi_d[-1, :] * vu) / D
     B = (chi_d[-1, :] * uu - chi_u[-1, :] * ud) / D
-    
     
     dos_m = ((r/r[-1])**(2*mu) * (np.abs(chi_u)**2 + np.abs(chi_d)**2).transpose()).transpose() 
     dos_m *= np.abs(E) / 4.0 / np.pi / (A**2 + B**2)
@@ -141,17 +171,17 @@ def test_rho():
     mlist = np.arange(0, 10.0, 1.0)
     r_0 = 1.0
     r = np.linspace(0.1, 50.0, 500)
-    figure()
+#    figure()
  
     for Z in [0.0, 0.1, 0.2, 0.3]:
         U = - Z / np.sqrt(r**2 + r_0**2)
         rho_0 = - (Emax**2 - Emin**2) / 4.0 / math.pi
         rho_rpa = -Z / 16.0 * r_0 / np.sqrt(r**2 + r_0**2)**3
         rho = rhocalc(Emin, Emax, r, U, mlist)
-        plot (r, rho, label='Z = %g' % Z)
-        plot (r, rho_0 + rho_rpa, label='Z = %g, rpa' % Z)
-    legend()
-    show()
+#        plot (r, rho, label='Z = %g' % Z)
+#        plot (r, rho_0 + rho_rpa, label='Z = %g, rpa' % Z)
+#    legend()
+#    show()
     
 
 if __name__ == '__main__':
