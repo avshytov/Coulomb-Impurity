@@ -2,6 +2,7 @@ import math
 import numpy as np
 import scipy 
 from scipy import special
+from scipy import interpolate
 import util 
 from util import * 
 
@@ -67,19 +68,20 @@ def odedos_m(E,r,U,m):
         #f_u = (m-mu)/r * chi_u - (E - U)*chi_d
         #f_d = (E - U)*chi_u - (1 + mu + m)/r * chi_d
         return f_u,f_d
+    Us = interpolate.splrep(r, U)
     def rk4step(chi_u, chi_d, r_p, r_n, h):
         r1 = r_p
         r2 = r_p + 0.5 * h
         r3 = r2
         r4 = r_n
      
-        rs = np.array([r1, r2, r3, r4])
-        Us = gridswap(r,rs,U)
+        #rs = np.array([r1, r2, r3, r4])
+        Ui = interpolate.splev(np.array([r1, r2, r3, r4]), Us)
 
-        U1 = Us[0]
-        U2 = Us[1]
-        U3 = U2
-        U4 = Us[3]
+        U1 = Ui[0]
+        U2 = Ui[1]
+        U3 = Ui[2]
+        U4 = Ui[3]
 
         k1u, k1d = rhs(chi_u, chi_d, r1, U1)
         k2u, k2d = rhs(chi_u+k1u*0.5*h, chi_d+0.5*k1d*h, r2, U2)
