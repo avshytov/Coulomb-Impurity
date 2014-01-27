@@ -127,7 +127,7 @@ def doscalc(E,r,U,mlist):
     return 2.0 * dos_tot # We assume only m>=0 are included
 
 def rhocalc(Emin, Emax, r, U, mlist):
-    N_e = 1000
+    N_e = 2000
     Es = np.linspace(Emin, Emax, N_e)
     dos = doscalc(Es, r, U, mlist)
     weight = np.zeros(len(Es))
