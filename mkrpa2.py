@@ -28,6 +28,9 @@ def Pi_intra2 (q):
     return Pi_intra(q) - 2.0 / 3.0 / (q**2 + 1.0)
 
 
+def Pi_intra3(q):
+    return Pi_intra(q) - 2.0/3.0/(q**2 + 1.0) - 2.0/5.0/(q**2 + 1.0)**2
+
 def show_pi():
    qvals = np.arange(0.001, 5.0, 0.01)
    qvals1 = np.arange(1.00, 5.0, 0.01)
@@ -77,23 +80,59 @@ def F_intra2(r1, r2, kF):
     #print "In F2: ", I, I2
     return (I + I2) * kF**3 / (4.0 * math.pi**2)
 
+def G2_intra_asympt(kF, r):
+    C = 1.0 / 32.0 / np.pi / r**3
+    xi = 2.0 * kF * r
+    # Coefficients checked by matching this with exact calculation
+    # TODO: this does not fully match analytical calculation, 
+    # due to 5/4 instead of 1. WHY?
+    u = 1.0 - 4.0 / math.pi * math.cos(xi) - 2.0 / math.pi * math.sin(xi) / xi
+    return C * u
+
 def G2_intra(r, kF): # xi == kF * r
+    if (kF * r > 15.0):
+        return G2_intra_asympt(kF, r)
     print "r, KF = ", r, kF
     #print r1, r2, kF
     """
         Integration routine --- for internal use in Q_intra
     """
-    s = np.max([kF * r, 1.0])
+    #s = np.max([kF * r, 1.0])
+    s = 1.0
     #
     # First, handle the difference between Pi_intra 
     # and 2/3 1/(q^2 + 1)
     #
     def f(x):
         J1 = special.jn(0, x * kF * r / s)
-        return Pi_intra2(x / s) * J1 * x / s**2
+        return Pi_intra3(x / s) * J1 * x / s**2
     #print r1, r2
-    I, eps = integrate.quad(f, 0.0, np.Inf, limit=300)
+    split_points = [0.0, 2.0, 3.0]
+    split_points.sort()
+    split_points.append(np.Inf)
+    I = 0.0
+    eps = 0.0
+    for i in range(1, len(split_points)):
+        nmax = 300
+        a =  split_points[i - 1]
+        b =  split_points[i]
+        if i < len(split_points) - 1:
+           n1 = int(abs(b - a) * kF * r /s / 6.0 * 20.0)
+           if n1 > nmax: 
+              nmax = n1
+        Ii, epsi = integrate.quad(f, a, b, limit=nmax)
+        I += Ii
+        print Ii, epsi, a, b, nmax
+        eps += epsi
+    #Ii, epsi =     
+    #xab = np.array([4.0 * s, 20.0 * s / kF / r])
+    #xa = min(xab)
+    #xb = max(xab)
+    #I1a, eps1a = integrate.quad(f, 0.0, xa,    limit=500)
+    #I1b, eps1b = integrate.quad(f, xa, xb,    limit=500)
+    #I1c, eps1c = integrate.quad(f, xb, np.Inf, limit=200)
     
+    #I = I1a + I1b + I1c
     #
     # Now add the missing contribution:
     #   The integral for 1/(q^2 + 1) can be found as 
@@ -107,9 +146,11 @@ def G2_intra(r, kF): # xi == kF * r
     #I2, eps2 = integrate.quad(f2, 0.0, math.pi)
     I2 = special.kn(0, kF * r)
     I2 *=  2.0 / 3.0 
+    I3 = special.kn(1, kF * r) * kF * r / 2.0
+    I3 *= 2.0/5.0
     
     #print "In G2: ", I, I2
-    return (I + I2) * kF**3 / (4.0 * math.pi**2)
+    return (I + I2 + I3) * kF**3 / (4.0 * math.pi**2)
 
 def F_intra(r1, r2, kF):
     """
@@ -131,15 +172,18 @@ def F_intra(r1, r2, kF):
     
     
 def mk_intra_spline(kF, rmax):
-    xvals = np.arange(0.001, max(kF*rmax, 1.0), 0.03)
+    xvals = np.arange(1e-5, max(kF*rmax, 1.0), 5e-2)
     yvals = np.vectorize(lambda x: G2_intra(x/kF, kF))(xvals)
     #print xvals, yvals
     spl = interpolate.splrep(xvals, yvals)
+    if True: 
+       fname = "data/rpatot-intra-spline-kF=%g-rmax=%g.npz" % (kF, rmax)
+       np.savez(fname, xvals=xvals, yvals=yvals)
     if False:
        import pylab
        pylab.figure()
        pylab.plot(xvals, yvals)
-       pylab.title("F_intra spline")
+       pylab.title("G2_intra spline")
        pylab.show()
     def F_intra(r1, r2):
         def f_theta(theta):
@@ -161,6 +205,7 @@ def testG(r1vals, r2vals, kF):
         pylab.plot (r2vals, Gvals, label='G')
         pylab.legend()
         pylab.title('r1 = %g' % r1)
+        #pylab.show()
     pylab.show()
 
 def testF(r1, r2, kF):
@@ -187,7 +232,7 @@ def do_RPA_intra(r, kF):
     #if True: 
     #   pylab.figure()
     integrate_all = False
-    dr0 = min(0.5/kF, 0.5)
+    dr0 = min(0.2/kF, 0.2)
     Gfun = mk_intra_spline(kF, max(r) * 2.0)
     for i in range(len(r)):
         print "Qintra:", i
@@ -398,8 +443,11 @@ def do_RPA_inter(r):
         I7, eps7 = integrate.quad(f7, 0.0, x1)
         I8, eps8 = integrate.quad(f8, 0.0, x1)
         drho = x2 - x1
-        Q[i, -1] += (   + I7*x2/drho - I8/drho)  
-        Q[i, -2] += (   - I7*x1/drho + I8/drho)  
+        if True:
+           C1 = (   + I7*x2/drho - I8/drho )
+           C2 = (   - I7*x1/drho + I8/drho)
+           Q[i, -1] += C1 #(   + I7*x2/drho - I8/drho)  
+           Q[i, -2] += C2 #(   - I7*x1/drho + I8/drho)  
         #print i, "**",  Q[i, 0], Q[i, 1], Q[i, -1], Q[i, -2]
         #ff = open("xxx-%d.dat" % i, 'w')
         #for j in range(0, len(r)):
@@ -411,6 +459,8 @@ def do_RPA_inter(r):
         s = np.dot(Q[i, :], 1.0/r)
         s1 = np.dot(Q[i, :], r/r)
         print "s: ", s, s1, s0, s2
+        Q[i, -1] -= C1
+        Q[i, -2] -= C2
     return Q
 
 def RPA_inter(r):
@@ -442,7 +492,7 @@ if __name__ == '__main__':
       testF(1.0, 10.0, kF0)
       testF(1.0, 1.1, kF0)
    if True:
-      testG([1.0, 2.0, 3.0, 5.0, 10.0], np.arange(0.01, 10.0, 0.1), 0.3)
+      testG([1.0, 2.0, 3.0, 5.0], np.arange(0.01, 10.0, 0.1), 2.0)
    if False:
       show_pi()
    
