@@ -187,14 +187,20 @@ def do_kernel_m_inter(r, mvals):
         I7, eps7 = integrate.quad(f7, 0.0, x1)
         I8, eps8 = integrate.quad(f8, 0.0, x1)
         drho = x2 - x1
-        Q[i, -1] += (   + I7*x2/drho - I8/drho)  
-        Q[i, -2] += (   - I7*x1/drho + I8/drho)  
+        #Q[i, -1] += (   + I7*x2/drho - I8/drho)  
+        #Q[i, -2] += (   - I7*x1/drho + I8/drho)  
+        C1 = (   + I7*x2/drho - I8/drho)  
+        C2 = (   - I7*x1/drho + I8/drho)  
+        Q[i, -1] += C1#(   + I7*x2/drho - I8/drho)  
+        Q[i, -2] += C2# (   - I7*x1/drho + I8/drho)  
         
         s = np.dot(Q[i, :], 1.0/r)
         Q[i, i] -= r[i] * s
         s = np.dot(Q[i, :], 1.0/r)
         s1 = np.dot(Q[i, :], r/r)
         print "s: ", s, s1
+        Q[i, -1] -= C1
+        Q[i, -2] -= C2
     return Q
 
 def kernel_m_inter(r, mlist):
@@ -233,6 +239,6 @@ def kernel_m_intra(r, mlist, kF):
   
 def kernel_m (r, mlist, kF):
     Q1 = kernel_m_inter(r, mlist)
-    if (kF * r.max() > 0.1):
+    if (kF * r.max() > 0.01):
         Q1 += kernel_m_intra(r, mlist, kF)
     return Q1
