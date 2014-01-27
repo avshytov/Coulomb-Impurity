@@ -5,11 +5,13 @@ import math
 import coulomb
 import scipy
 from scipy import special
-from scipy.interpolate import splev, splrep
+from scipy import interpolate
+#from scipy.interpolate import splev, splrep
 from diracsolver import (makeDirac, solveDirac, dos_bg, diracLDOS, find_rho, getDensity,
                          prepareLDOS, bandDensity)
 import mkrpa2
 import rpakernel
+import rpam
 from odedirac import (_sgn, odedos_m, doscalc, rhocalc) 
 
 #def backgroundDensity(r, mlist, Temp):
@@ -17,11 +19,48 @@ from odedirac import (_sgn, odedos_m, doscalc, rhocalc)
 #    return rho_0
     
 def RPA_kernel(r, kF):
-    Q_rpa = mkrpa2.RPA_inter(r)  
+    Q_rpa = mkrpa2.RPA_inter(r) 
     if (kF * r.max() > 0.01):
         Q_rpa += mkrpa2.RPA_intra(r, kF)
     return Q_rpa
 
+class Kernel:
+    def __init__ (self, r, Q):
+        self.r = r
+        self.Q = Q
+        
+    def __call__ (self, r, U):
+        Us = interpolate.splrep(r, U)
+        Un = interpolate.splev(self.r, Us)
+        Xn = np.dot(self.Q, Un)
+        Xs = interpolate.splrep(self.r, Xn)
+        return interpolate.splev(r, Xs, der=0)
+
+class RPA_tot: 
+    def __init__ (self, r, rexp, kF):
+       Q_inter = mkrpa2.RPA_inter(rexp)
+       self.Q_inter = Kernel(rexp, Q_inter)
+       Q_intra = np.zeros((len(r), len(r)))
+       if (kF * r.max() > 0.01):
+           Q_intra = mkrpa2.RPA_intra(r, kF)
+       self.Q_intra = Kernel(r, Q_intra)
+       
+    def __call__ (self, r, U): 
+        return self.Q_inter(r, U) + self.Q_intra(r, U)
+    
+class RPA_m:
+    def __init__ (self, r, rexp, kF, mlist):
+       Qm_inter = rpakernel.kernel_m_inter(rexp, mlist)
+       self.Qm_inter = Kernel(rexp, Qm_inter)
+       Qm_intra = np.zeros((len(r), len(r)))
+       if (kF * r.max() > 0.01):
+           Qm_intra = rpam.kernel_m_intra(r, mlist, kF) 
+           #rpakernel.kernel_m_intra(r, mlist, kF)
+       self.Qm_intra = Kernel(r, Qm_intra)
+    def __call__ (self, r, U): 
+        return self.Qm_inter(r, U) + self.Qm_intra(r, U)
+        
+    
 class GrapheneResponse:
     def __init__ (self, r, Ef, **kwargs):
         params = {
@@ -42,15 +81,22 @@ class GrapheneResponse:
         if False:  # Use this to skip kernel calculation; helpful in debugging
            self.Q_Emin = np.zeros((len (self.rexp), len(self.rexp)))#RPA_kernel(self.rexp, abs(self.Emin))
            self.Q_Emax = np.zeros(np.shape(self.Q_Emin)) #RPA_kernel(self.rexp, abs(self.Emax))
-           self.Qm_Emax = np.zeros(np.shape(self.Q_Emin))#rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emax))
-           self.Qm_Emin = np.zeros(np.shape(self.Q_Emax))#rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emin))
         else:
            # Full RPA kernel
-           self.Q_Emin  = RPA_kernel(self.rexp, abs(self.Emin))
-           self.Q_Emax  = RPA_kernel(self.rexp, abs(self.Emax))
+           self.Q_Emin  = RPA_tot(self.r, self.rexp, abs(self.Emin)) 
+           self.Q_Emax  = RPA_tot(self.r, self.rexp, abs(self.Emax)) 
+           #Kernel(self.rexp, RPA_kernel(self.rexp, abs(self.Emin)))
+           #self.Q_Emax  = Kernel(self.rexp, RPA_kernel(self.rexp, abs(self.Emax)))
            # m-resolved RPA kernel
-           self.Qm_Emax = rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emax))
-           self.Qm_Emin = rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emin))
+        if False:
+           self.Qm_Emax = self.Q_Emax; #np.zeros(np.shape(self.Q_Emin))#rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emax))
+           self.Qm_Emin = self.Q_Emin; #np.zeros(np.shape(self.Q_Emax))#rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emin))
+        else:
+           self.Qm_Emin = RPA_m(self.r, self.rexp, abs(self.Emin), self.mlist) 
+           self.Qm_Emax = RPA_m(self.r, self.rexp, abs(self.Emax), self.mlist) 
+           #rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emax))
+           #self.Qm_Emin = 
+           #rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emin))
         self.rho_0 = self.diracDensity(np.zeros(np.shape(r)))
         N = len(self.r)
           
@@ -74,15 +120,21 @@ class GrapheneResponse:
         return util.gridswap(self.rexp, self.r, rho_exp)
     
     def rho_RPA(self, U):
-        return self.apply_kernel(self.Q_Emax, U)
+        return self.Q_Emax(self.r, U) #self.apply_kernel(self.Q_Emax, U)
     
     def rho_RPA_m(self, U):
-        return self.apply_kernel(self.Qm_Emax - self.Qm_Emin, U)
+        return self.Qm_Emax(self.r, U) - self.Qm_Emin(self.r, U)
+        #return self.apply_kernel(self.Qm_Emax - self.Qm_Emin, U)
     
     def highm(self, U): # Calculation of high-m correction within RPA
-        Qmax =  self.Q_Emax - self.Qm_Emax
-        Qmin =  self.Q_Emin - self.Qm_Emin
-        return -self.apply_kernel(Qmax - Qmin, U)
+        r = self.r
+        highm_max = - (self.Q_Emax(r, U) - self.Qm_Emax(r, U))
+        highm_min = - (self.Q_Emin(r, U) - self.Qm_Emin(r, U))
+        return highm_max - highm_min
+        #return - ( self.Q_Emax(r, U) - self.Qm_Emax(r, U) - self.Q_Emin(r, U) + self.Q
+        #Qmax =  self.Q_Emax - self.Qm_Emax
+        #Qmin =  self.Q_Emin - self.Qm_Emin
+        #return -self.apply_kernel(Qmax - Qmin, U)
         
     def highm_old(self, E, U): # old way to calculate high-m correction
         Mmax = self.mlist[-1]
@@ -107,26 +159,52 @@ class GrapheneResponse:
         dnu_min = (highm_min1 - highm_min2) / 2.0 / eps * _sgn(self.Emin)
         return (dnu_max - dnu_min) * U / 2.0;
     
+    def U2(self, E, U):
+        s = np.zeros(np.shape(self.r))
+        #
+        # The derivative of epsilon * sum(J_m^2 (epsilon*r) + J_{m+1}^2)
+        # is sum( (2m + 1) J_m^2 + (2m + 3) J_{m + 1}^2). 
+        # This could be shown with the help of recursion relations 
+        #
+        for m in self.mlist: 
+            b  = special.jn(m,     E * self.r)
+            b1 = special.jn(m + 1, E * self.r)
+            s += b**2  + b1**2 
+        m0 = self.mlist[0]
+        m1 = self.mlist[-1] + 1
+        s += 2.0 * m0 * special.jn( m0, E * self.r)**2
+        s -= 2.0 * m1 * special.jn( m1, E * self.r)**2
+        s *= 2.0
+        if (E < 0): s *= -1.0
+        #import pylab as pl
+        #pl.plot(r, s)
+        #pl.show()
+        return U * U / 8.0 / np.pi * s 
+        
     
     def seaContribution(self, U):
         sgnE = 1.0
         if (self.Emin < 0): sgnE = -1.0
         rho = np.zeros(np.shape(U))
-        rho = self.highm(U) * sgnE + self.highm2(U)
+        rho = 0.0*self.highm(U) * sgnE + self.highm2(U) * (0.0)
         #rho  = self.highm( self.Emax,  U)
         #rho -= self.highm( self.Emin,  U)
         
-        rho += U**2 / 4.0 / np.pi * sgnE # Quadratic contribution
+        #rho += 1.0*U**2 / 4.0 / np.pi * sgnE # Quadratic contribution
+        rho += self.U2(self.Emin, U)
         
-        rho += self.apply_kernel(self.Q_Emin, U) 
+        #rho += self.apply_kernel(self.Q_Emin, U) 
+        #rho += self.apply_kernel(self.Qm_Emin, U)
+        rho += self.Qm_Emin(self.r, U)
+        rho += self.Q_Emax(self.r, U) - self.Qm_Emax(self.r, U)
         return rho
         
     def rho_U(self, U):    
         rho  = self.bandResponse(U)
         rho += self.seaContribution(U) 
-        Rmax = 30.0
+        Rmax = 45.0
         imax = np.abs(self.r - Rmax).argmin()
-        rho_rpa = self.apply_kernel(self.Q_Emax, U)
+        rho_rpa = self.Q_Emax(self.r, U) #self.apply_kernel(self.Q_Emax, U)
         rho[imax:] = rho_rpa[imax:]
         return rho 
 
@@ -138,9 +216,11 @@ if __name__ == '__main__':
    r = util.make_lin_grid(rmin, rmax, N) 
    Ef = -0.2
    Ecut = -3.0
-   graphene = GrapheneResponse(r, -1e-4, Ecut=Ecut, Mmax=31)
+   Mmax = 31
+   #graphene = GrapheneResponse(r, -1e-4, Ecut=Ecut, Mmax=31)
+   graphene = GrapheneResponse(r, -1e-4, Ecut=Ecut, Mmax=Mmax)
    
-   Z = 0.25
+   Z = 0.02
    r_0 = 1.0
    U = Z / np.sqrt(r**2 + r_0**2)
    rho_th = -Z * r_0 / 16.0 / np.sqrt(r**2 + r_0**2)**3
@@ -148,13 +228,17 @@ if __name__ == '__main__':
    rho_RPA = graphene.rho_RPA(U)
    rho_U   = graphene.rho_U(U)
    rho_Ub  = graphene.bandResponse(U) 
-   rho_RPAb = graphene.apply_kernel(graphene.Q_Emax - graphene.Q_Emin, U)
+   rho_RPAb = graphene.Q_Emax(r, U) - graphene.Q_Emin(r, U)
+   rho_RPAbm = graphene.Qm_Emax(r, U) - graphene.Qm_Emin(r, U)
+   #rho_RPAb = graphene.apply_kernel(graphene.Q_Emax - graphene.Q_Emin, U)
+   #rho_RPAbm = graphene.apply_kernel(graphene.Qm_Emax - graphene.Qm_Emin, U)
    rho_0 = (graphene.Emax**2 - graphene.Emin**2) / 4.0 / math.pi
    rho_1 = graphene.diracDensity(U)   
 
    if True:
        imin = 0
-       imax = 199
+       r_stop = 25.0; 
+       imax = np.abs(r - r_stop).argmin()
        rmin = r[0]
        rmax = r[-1]
        dr = r[imin+1]-r[imin]
@@ -162,45 +246,74 @@ if __name__ == '__main__':
        Qtots = []
        Qths = []
        print 'Total Charge Calculation: rmin=', rmin, 'rmax=', rmax
+       #for Z0 in [0.1]: 
        for Z0 in [0.1, 0.2, 0.3, 0.4, 0.5]:
+       #for Z0 in [0.6, 0.8, 1.0, 1.2, 1.4]:
            print 'Calculating for Z0=',Z0 
            Ugrid.append(Z0)
-           Qtheory = (( 1.0 / np.sqrt(r_0**2+rmin**2))
-                      - (1.0/ np.sqrt(r_0**2 + rmax**2)))
+           Qtheory = (( r_0 / np.sqrt(r_0**2+rmin**2))
+                      - (r_0/ np.sqrt(r_0**2 + rmax**2)))
            Qtheory *= Z0 * np.pi / 8.0
            Us = Z0 / np.sqrt(r**2 + r_0**2)
            rhotot = graphene.rho_U(Us)
            
-           import pylab as pl
-           pl.title('Total density for Z0=%g'%Z0)
-           pl.plot(r,rhotot, label='total charge density')
-           pl.legend()
-           pl.show()
-           pl.figure()
-
+           rho_rpa = -Z0 / 16.0 * r_0 / np.sqrt(r**2 + r_0**2)**3
+           
+           
            Qsim = 0.5 * dr * rhotot[imin] * r[imin]
            Qsim += 0.5 * dr * rhotot[imax] * r[imax]
+           Qrpa = 0.5 * dr * rho_rpa[imin] * r[imin]
+           Qrpa += 0.5 * dr * rhotot[imax] * r[imax]
            for i in range (imin+1, imax):
                Qsim += dr * rhotot[i] * r[i]
+               Qrpa += dr * rho_rpa[i] * r[i]
            Qsim *= -2.0 * np.pi
+           Qrpa *= -2.0 * np.pi
+           print "Z0 = ", Z0, "Qsim = ", Qsim, "Qrpa = ", Qrpa, "th: ", Qtheory
+           import pylab as pl
+           pl.figure()
+           pl.title('Total density for Z0=%g'%Z0)
+           pl.plot(r,rhotot, label='total charge density')
+           pl.plot(r,rho_rpa, label='RPA charge density')
+           pl.plot(r, rho_rpa - rhotot, label='diff')
+           pl.legend()
+           pl.figure()
+           pl.title('Total density for Z0=%g'%Z0)
+           pl.plot(r,r*rhotot, label='r*total charge density')
+           pl.plot(r,r*rho_rpa, label='r*RPA charge density')
+           pl.plot(r, r*(rho_rpa - rhotot), label='r*diff')
+           pl.legend()
+           pl.show()
+           
            Qtots.append(Qsim)
            Qths.append(Qtheory)
        Ugrid = np.array(Ugrid)
        Q_sim = np.array(Qtots)
        Q_linear = np.array(Qths)
        Q_bs = (np.pi/8.0*Ugrid + 0.19*Ugrid**3)
+       pl.figure()
+       pl.plot(Ugrid, Q_sim, label='sim')
+       pl.plot(Ugrid, Q_linear, label='Linear')
+       pl.plot(Ugrid, Q_bs, label='B-S')
+       pl.legend()
 
    import pylab as pl
+   pl.figure()
    pl.plot(graphene.r, graphene.rho_0, label='rho_0')
    pl.plot(graphene.r,          rho_1, label='rho_0 + U')
    pl.plot(graphene.r, graphene.rho_0 + rho_U, label='sum')
+   pl.title('Ecut = %g' % graphene.Emin)
    pl.legend()
    pl.figure()
    pl.plot(r, rho_RPA, label='RPA response (full)')
    pl.plot(r, rho_RPAb, label='RPA response (band)')
+   pl.plot(r, rho_RPAbm, label='RPA response (band-m)')
    pl.plot(r, rho_U,   label='response from sim')
    pl.plot(r, rho_Ub,   label='response from sim (band)')
    pl.plot(r, rho_th,  label='expected')
+   pl.plot(r, rho_Ub - rho_RPAbm, label='rho_Ub - rho_RPA_b(m)')
+   pl.plot(r, rho_Ub - rho_RPAb, label='rho_Ub - rho_RPA_b')
+   pl.title('Ecut = %g' % graphene.Emin)
    pl.legend()
    pl.figure()
    pl.loglog(r, np.abs(rho_RPA), label='RPA response (full)')
@@ -209,9 +322,13 @@ if __name__ == '__main__':
    pl.loglog(r, np.abs(rho_Ub),   label='response from sim (band)')
    pl.loglog(r, np.abs(rho_th),  label='expected')
    pl.legend()
+   pl.title('Ecut = %g' % graphene.Emin)
    pl.figure()
-   pl.plot(Ugrid, Q_sim, label='sim')
-   pl.plot(Ugrid, Q_linear, label='Linear')
-   pl.plot(Ugrid, Q_bs, label='B-S')
+   pl.plot(r, rho_RPAb - rho_RPAbm, label='rho_RPA_U - rho_RPA_bm')
+   pl.title("diff rpa resp Ecut=%g" % graphene.Emin)
    pl.legend()
+   f = open('rho-u-Z=%g-Ecut=%g-Mmax=%d.dat' % (Z, Ecut, Mmax), 'w')
+   for i in range(len(r)):
+       f.write('%g\t%g\n' % (r[i], rho_U[i]))
+   f.close()
    pl.show()
