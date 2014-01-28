@@ -31,7 +31,11 @@ def do_kernel(r):
             kval = special.ellipk(mij)
             K[i, j] = kval / (ri + rj) * 4.0 * drj #* wj
             K[j, i] = kval / (ri + rj) * 4.0 * dri #* wi
-        K[i, i] = 2.0/ri * (math.log(8.0*ri/dri) + 1.0) * dri
+        if i != 0:
+           K[i, i] = 2.0/ri * (math.log(8.0*ri/dri) + 1.0) * dri
+        else:
+           K[i, i]  = 1.0 / ri * (math.log(8.0*ri/dri) + 1.0) * dri
+           K[i, i] += math.log(8.0 ) + 1.0 # interval [0, r[0]] 
         K[i, -1] *= 0.5
 	#K[i, 0]  *= 0.5
 	def f(r):
