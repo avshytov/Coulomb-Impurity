@@ -1,0 +1,1098 @@
+\documentclass[preprint,aps,prb]{revtex4}
+\usepackage{amssymb,amsmath,bm,graphicx}
+\begin{document}
+\begin{center}
+{\LARGE\bf
+Polarization operator in graphene: expansion over angular momentum
+channels, anomaly, etc}
+\\
+{\bf A. Shytov}
+\end{center}
+
+Goals: analyze contribution of individual momentum channels 
+to the screening charge distribution, derive screening
+in the presence of AB flux.
+
+\section{Green's function}
+
+Retarded Green's function~$G_{R}^{(m)}(\epsilon, r, r')$
+in a given angular momentum channel~$m$ satisfies the equation
+\begin{equation}
+\left\{ 
+\epsilon + i {\hat\sigma_x} \frac{\partial}{\partial r}
++ \frac{i}{r} \left(
+\begin{array}{cc}
+0 & m + 1\\
+-m  & 0
+\end{array}
+\right)
+\right\}
+\hat{G}_R^{(m)}(\epsilon, r, r') = \frac{\hat{1}}{2\pi r'}\, \delta (r - r')
+\end{equation}
+The solution to this one-dimensional problem 
+can be sought in the form
+\begin{equation}
+{\hat G}^{(m)}_{R}(\epsilon, r, r') = 
+\left\{ 
+\begin{array}{lcr}
+u (r) \otimes a (r') & {\rm if} & {r < r'} \\
+v (r) \otimes b (r') & {\rm otherwise} &
+\end{array}
+\right.
+\ , 
+\end{equation}
+where~$u_j(r)$ and~$v_j(r)$ are two solutions of Dirac equation which
+satisfy boundary conditions at~$r = 0$ and~$r = \infty$. 
+The quantities~$a_j(r')$ and~$b_j(r')$ are to be chosen to satisfy
+the boundary condition at~$r = r'$:
+\begin{equation}
+i \sigma_x \left. G_R^{(m)}(\epsilon, r, r') \right|_{r = r'-0}^{r =
+r'+0} = \frac{1}{2\pi r}
+\ .
+\end{equation}
+This gives
+\begin{equation}
+a_j = c_j v_j(r') \ , \qquad b_j = c_j u_j(r') \ ,  
+\end{equation}
+with
+\begin{equation}
+\label{c-eq}
+c_1 = - c_2 = \frac{1}{2\pi i r} 
+\frac{1}{u_1(r') v_2(r') - u_2(r') v_1(r')}
+\ .
+\end{equation}
+
+The solution regular at~$r = 0$ is
+\begin{equation}
+\label{eq-u}
+u (r) = \left(
+\begin{array}{cc}
+J_{m} (|\epsilon| r) \\
+i \mathop{\rm sign}\nolimits\epsilon J_{m + 1}(|\epsilon| r)
+\end{array}
+\right)
+\ , 
+\end{equation}
+where~$J_{m}(x)$ is Bessel function. (From now on, we assume~$m > -1$. 
+Otherwise, one has to use~$|m|$ and~$|m + 1|$ instead of~$m$ and~$m +
+1$, and change the sign of the second component of~$u$.)
+The retarded solution is 
+given by Hankel function:
+\begin{equation}
+\label{eq-v}
+v(r) = \left(
+\begin{array}{c}
+H_{m}^{(1)}(|\epsilon|r) \\
+i \mathop{\rm sign}\nolimits\epsilon H_{m + 1}^{(1)}(|\epsilon|r)
+\end{array}
+\right)
+\ .
+\end{equation}
+The Wronskian in Eq.(\ref{c-eq}) takes the form
+\begin{eqnarray}
+u_1(r') v_2(r') - u_2(r') v_1(r') &=& i  \mathop{\rm
+sign}\nolimits\epsilon \left[
+J_m(|\epsilon|r') H_{m + 1}(|\epsilon|r') 
+- J_{m + 1}(|\epsilon|r') H_m(|\epsilon|r')
+\right] 
+\\
+\nonumber
+&=&  i  \mathop{\rm sign}\nolimits\epsilon 
+\left[ J_{m} (|\epsilon|r') Y_{m + 1}(|\epsilon|r') 
+- J_{m + 1} (|\epsilon|r') Y_{m}(|\epsilon|r')
+\right] \ .
+\end{eqnarray}
+Using  the relation [Abramowitz, 9.1.16], we find
+\begin{equation}
+u_1(r') v_2(r') - u_2(r') v_1(r')
+= - \frac{2 i}{\pi \epsilon r'}
+\ .
+\end{equation}
+Therefore, retarded Green's function has the form
+\begin{equation}
+\hat{G}^{(m)}_R(\epsilon, r, r') = \frac{\epsilon}{4} 
+\left\{
+\begin{array}{ccc}
+u(r) \otimes \hat{\sigma}_3 v(r') & {\rm if} & r < r' \\
+v(r) \otimes \hat{\sigma}_3 u(r') & {\rm otherwise} &  
+\end{array}
+\right.
+\ , 
+\end{equation}
+where the spinors~$u(r)$ and~$v(r)$ are given by Eq.(\ref{eq-u}) 
+and~(\ref{eq-v}).
+(The factor~$\hat{\sigma}_3$ takes into account the relation~$c_1 = -c_2$).
+
+\section{Polarization operator}
+
+The static polarization operator~$\Pi^{(m)}(r, r')$ is related to causal
+Green's function~$G^{(m)}(\epsilon, r, r')$ as
+\begin{equation}
+\Pi^{(m)} = -i \mathop{\rm Tr}\nolimits 
+\int\limits_{-\infty}^{\infty} 
+\hat{G}^{(m)}(\epsilon, r, r') 
+\hat{G}^{(m)}(\epsilon, r', r) \frac{d\epsilon}{2\pi}
+\ .
+\end{equation}
+At zero temperature, the causal Green's function is related to retarded
+function~$G_R$ as
+\begin{equation}
+\hat{G}^{(m)} (\epsilon, r, r') = 
+\left\{
+   \begin{array}{ccc}
+   \hat{G}^{(m)}_R (\epsilon, r, r') & {\rm for} & \epsilon > \epsilon_F \\ 
+   \hat{G}^{(m)\ast}_R (\epsilon, r, r') & {\rm for} & \epsilon < \epsilon_F 
+   \end{array}
+\right.
+\ .
+\end{equation}
+Therefore, one can write the polarization operator as 
+\begin{eqnarray}
+\Pi^{(m)}(r, r') &=& -i \mathop{\rm Tr}\nolimits 
+\left\{
+\int\limits_{-\infty}^{\epsilon_F} 
+\frac{d\epsilon}{2\pi}
+G_R^{(m)\ast} (\epsilon, r, r') G_R^{(m)\ast} (\epsilon, r', r)
++
+ \int\limits_{\epsilon_F}^{\infty} \frac{d\epsilon}{2\pi}
+ G_R^{(m)} (\epsilon, r, r') G_R^{(m)} (\epsilon, r', r)
+ \right\}
+\nonumber
+\\
+ &\equiv& \Pi_n^{(m)} + \Pi_d^{(m)} 
+ \ , 
+\end{eqnarray}
+where
+\begin{equation}
+\Pi_n^{(m)}(r, r') = 
+-i \mathop{\rm Tr}\nolimits 
+\int\limits_{-\infty}^{0} \frac{d\epsilon}{2\pi}
+G_R^{(m)\ast} (\epsilon, r, r') G_R^{(m)\ast} (\epsilon, r', r)
+-i \mathop{\rm Tr}\nolimits 
+\int\limits_{0}^{\infty} \frac{d\epsilon}{2\pi}
+G_R^{(m)} (\epsilon, r, r') G_R^{(m)} (\epsilon, r', r)
+\end{equation}
+is the neutral contribution, and
+\begin{equation}
+\Pi_d^{(m)}(r, r') = -i \mathop{\rm Tr}\nolimits
+\int\limits_{0}^{\epsilon_F} \frac{d\epsilon}{2\pi} \left[
+G_R^{(m)\ast} (\epsilon, r, r') G_R^{(m)\ast} (\epsilon, r', r)
+- G_R^{(m)} (\epsilon, r, r') G_R^{(m)} (\epsilon, r', r)
+\right]
+\end{equation}
+is the doping contribution. The latter can be rewritten as
+\begin{eqnarray}
+\label{Pi-d}
+\Pi_d^{(m)}(r, r' > r) &=& 2 \mathop{\rm Im}\nolimits
+\int\limits_{0}^{\epsilon_F} \frac{\epsilon^2 d\epsilon}{32 \pi}
+\left[u_1^2(r) - u_2^2(r)\right] \left[v_1^2(r') - v_2^2(r')\right]
+\\
+&=& \int\limits_{0}^{\epsilon_F} \frac{\epsilon^2 d\epsilon}{8\pi}
+\left[J_m^2(\epsilon r) + J_{m + 1}^2(\epsilon r)\right]
+\left[J_m(\epsilon r')Y_m(\epsilon r') 
+    + J_{m + 1}(\epsilon r')Y_{m + 1}(\epsilon r')\right]
+    \ , 
+\nonumber
+\end{eqnarray}
+where~$Y_{m}(\epsilon r)$ is the Bessel function of the second kind, 
+$H_m^{(1)}(x) = J_m(x) + i Y_m(x)$.
+
+The neutral contribution~$\Pi_n^{(m)}(r, r')$ is given by a similar 
+expression. However, it is convenient to rewrite it by rotating
+the integration contour, as this removes oscillating behaviour 
+at~$\epsilon = \infty$. (The contour can be rotated because 
+Hankel function decay overweights Bessel function increase, due to 
+$r' > r$.)
+Using~$J_m(iz) = i^{-m} I_m(z)$, 
+$H^{(1)}_m(iz) = \frac{2}{\pi} i^{- m - 1} K_m(z)$, 
+we find
+\begin{equation}
+\label{Pi-n}
+\Pi_n^{(m)}(r, r' > r) 
+= - \int\limits_{0}^{\infty}
+    \frac{\epsilon^2 d\epsilon}{4\pi^3} 
+    \left[I_m^2(\epsilon r') - I^2_{m + 1}(\epsilon r') \right]
+    \left[K_m^2(\epsilon r') - K^2_{m + 1}(\epsilon r') \right]
+\ .   
+\end{equation}
+
+\section{Anomaly and magic relation}
+
+Let us analyze the properties of neutral polarization
+operator~$\Pi_n^{(m)}(r, r')$. At zero Fermi energy, there is no 
+intrinsic scale in the problem. Therefore, $\Pi_n^{(m)}(r, r')$
+can be represented as a function of $\rho = r/r'$ only: 
+\begin{equation}
+\Pi_n^{(m)}(r, r') = \frac{1}{4\pi^3} \left\{
+\begin{array}{ccc}
+\frac{1}{r'^3} {\cal P}^{(m)}\left(\frac{r}{r'}\right) & {\rm for} & r < r' \\
+\frac{1}{r^3}  {\cal P}^{(m)}\left(\frac{r'}{r}\right) & {\rm otherwise} &  
+\end{array}
+\right.
+\ , 
+\end{equation}
+with
+\begin{equation}
+{\cal P}^{(m)}(\rho) 
+=  \int\limits_{0}^{\infty}
+    x^2 dx
+    \left[I_m^2(x\rho) - I^2_{m + 1}(x\rho) \right]
+    \left[K_{m + 1}^2(x) - K^2_{m}(x) \right]
+\ .   
+\end{equation}
+Consider responses to two potentials: $U_1(r) = 1$ and  $U_2(r) = 1/r$. 
+In the first case, we 
+find, after summing up the~$r < r'$ and $r > r'$ contributions: 
+\begin{equation}
+\label{rho-const}
+\rho^{(m)}_{1, {\rm naive}}(r) = \frac{1}{2\pi^2 r} \int\limits_{0}^{1} 
+(\rho + 1) {\cal P}^{(m)}(\rho) d\rho = \frac{1}{2\pi^2 r}
+\ .
+\end{equation}
+In the second case, we find a similar expression:
+\begin{equation}
+\label{rho-coul}
+\rho^{(m)}_{2, {\rm naive}}(r) = \frac{1}{2\pi^2 r^2} \int\limits_{0}^{1} 
+(1 + \rho) {\cal P}^{(m)}(\rho) d\rho = \frac{1}{2\pi^2 r^2}
+\ .
+\end{equation}
+Here we used the fact that  both responses involve the same quantity, 
+which obeys the ``magic'' identity:
+\begin{equation}
+\label{magic}
+ \int\limits_{0}^{1}
+ (1 + \rho) {\cal P}^{(m)}(\rho) d\rho = 1
+ \ .
+\end{equation}
+Eq.~(\ref{magic}) holds
+for all values of angular momentum~$m$, both integer and 
+non-integer, except for~$m = -1/2$.  
+In the latter case,  the response vanishes, 
+due to~$K_{-1/2}^2(x) = K_{1/2}^2(x)$. 
+(The singular limit of~$m = -1/2$ is discussed further,
+see Eq.~(\ref{minus-half}) in the next Section.)
+The proof of the identity is given below in Section~\ref{sec:magic}. 
+
+
+The results~(\ref{rho-const}) and~(\ref{rho-coul}) 
+cannot be correct physically. First, the response to a
+constant potential must vanish, due to vanishing density of states 
+near the neutrality point. Secondly, the response to a $1/r$ potential
+is known to vanish at all finite distances, due to dielectric screening
+in graphene. 
+
+To resolve this paradox, it is instructive to consider the case of~$m
+= -1/2$, when the response function~$\Pi_n^{(-1/2)}$ vanishes
+identically. One can show that in this channel Dirac equation reduces
+to the equation for two uncoupled fermion branches in the potential~$U(r)$, 
+and therefore 
+admits the solution in which the potential changes only the phase of 
+the wave function, without any effect on the electron density. 
+This situation is akin to what happens in a one-dimensional Fermi gas
+with a linearized spectrum. In the latter case, it is known that the
+density response is determined by chiral anomaly, which results from 
+the shift of the kinetic energy cutoff by~$U(r)$. This gives an extra density 
+contribution
+\begin{equation}
+\delta \rho_{\rm anom}^{(m)}(r)  = - \frac{U(r)}{2\pi^2 r}
+\ .
+\end{equation}
+Obviously, such a shift should be applied to all angular momentum
+channels, and therefore one has to add this anomalous contribution
+to all angular momentum channels. (Indeed, near the large band cutoff
+energy the centrifugal potential~$m^2/r^2$ can be neglected.
+Therefore, anomalous contribution can be expected to be $m$-independent.) 
+This gives for the density
+\begin{equation}
+\delta \rho^{(m)}(r) = - \frac{U(r)}{2\pi^2 r} 
++ 2\pi \int\limits_{0}^{\infty} 
+  \left[\Pi_n^{(m)}(r, r') + \Pi_d^{(m)}(r, r')\right] r' U(r') dr' 
+\ , 
+\end{equation}
+with~$\Pi_n^{(m)}(r, r')$ and~$\Pi_d^{(m)}(r, r')$ given by
+Eqs.(\ref{Pi-n}) and~(\ref{Pi-d}) respectively. For~$m \neq -1/2$, 
+the anomalous contribution can be combined with regular one
+with the help of Eq.(\ref{magic}):
+\begin{equation}
+\delta \rho^{(m)}(r) = 
+ 2\pi \int\limits_{0}^{\infty} 
+  \left\{ \Pi_n^{(m)}(r, r') \left[ r'U(r') - rU(r) \right] 
+  + \Pi_d^{(m)}(r, r')r' U(r')\right\}  dr' 
+\ .
+\end{equation}
+For half-integer momenta, the anomalous contribution of the~$m = -1/2$
+channel has to be added explicitly.
+
+\section{Fractional momenta}
+
+The solution given above is strictly correct in the absence of 
+Aharonov-Bohm flux tube, which corresponds to integer values of~$m$. 
+In the prepense of flux tube, one has to take into account 
+magnetic polarization at the origin. However, for thin flux tubes
+this effect can be neglected. Indeed, the solution~$u(r)$, regular near the origin
+is proportional to~$(\epsilon r)^|m + 1|$ or~$(\epsilon r)^{|m|}$, and 
+is therefore suppressed at~$\epsilon a \ll 1$, where~$a$ is the size
+of the flux tube. At large energies, $\epsilon a \gg |m|$, the effect of
+flux tube is negligible, as can be shown by matching two semiclassical
+solutions inside and outside the tube. Thus, the prepense of the tube
+would have no significant effect on the treatment of anomaly. 
+Note also  that in a neutral graphene the response at distance~$r$ 
+is determined by~$\epsilon \sim r^{-1}$. Thus, the flux tube 
+mostly affects the screening within itself. (For thick flux tubes,
+such as those caused by superconducting vortices, 
+one has to use integer momentum screening inside the tube.)
+
+{\bf To be expanded?}
+
+\section{Serial expansion of~${\cal P}^{(m)}(\rho)$, and its Mellin
+transform}
+
+It is possible to obtain a serial expansion of the scale-invariant
+function~${\cal P}^{(m)}(\rho)$. To simplify the integrand, we write
+\begin{equation}
+I_m^2(x) = \int\limits_{0}^{2\pi} I_{2m} \left(2 x \cos\theta \right)
+\frac{d\theta}{2\pi}
+\ , 
+\end{equation}
+and
+\begin{equation}
+K_m^2(y) = \frac{1}{2}
+\int\limits_0^{\infty} K_{2m}(2 y  \rho \cosh u) du
+\ .
+\end{equation}
+Then, one can employ the recurrence relation between cylindrical
+functions:
+\begin{eqnarray}
+I_{2m}(z) - I_{2m + 2}(z) &=& \frac{2(2m + 1)}{z} I_{2m}(z)
+\ , \\
+K_{2m}(z) - K_{2m + 2}(z) &=& - \frac{2(2m + 1)}{z} K_{2m + 1}(z)
+\ .
+\end{eqnarray}
+This gives
+\begin{equation}
+{\cal P}^{(m)}(\rho) = \frac{(2m + 1)^2}{4}\int\limits_{0}^{\infty} dx
+\int\limits_{0}^{\infty} du \int\limits_{0}^{2\pi} \frac{d\theta}{2\pi}
+\frac{I_{2m + 1}\left(\frac{x \rho \cos \theta}{\cosh u}\right)}{\rho
+\cos \theta \cosh^2 u}
+K_{2m + 1} (x)
+\ .
+\end{equation}
+(The integration variable~$x$ was rescaled here.) Using the serial expansion
+\begin{equation}
+I_{2m + 1}(z) = \sum_{k = 0}^{\infty} \frac{\left(\frac{z}{2}
+\right)^{2m + 1 + 2k}}{k! \Gamma(k + 2m + 2)}
+\ , 
+\end{equation}
+we find
+\begin{equation}
+{\cal P}^{(m)}(\rho) = 
+\sum_{k = 0}^{\infty} \frac{\rho^{2m + 2k}}{2^{2m + 1  + 2k}} 
+\int\limits_{0}^{2\pi} (\cos\theta)^{2m + 2k} \frac{d\theta}{2\pi}
+\int\limits_{0}^{\infty} \frac{du}{(\cosh u)^{(2m + 2k + 3}} 
+\int\limits_{0}^{\infty} dx x^{2m + 2k + 1} K_{2m + 1}(x)
+\ .
+\end{equation}
+Using the relations
+\begin{equation}
+\int\limits_{0}^{2\pi} \cos^{n}\theta \frac{d\theta}{2\pi} 
+= \frac{\Gamma\left(\frac{n + 1}{2}\right)}{
+      \sqrt{\pi} \Gamma\left(\frac{n}{2} + 1\right)}
+      \ , \qquad
+\int\limits_{0}^{\infty} \frac{du}{\cosh^{n} u} = 
+\frac{\sqrt{\pi} \Gamma\left(\frac{n}{2} - 1\right)}{ 
+      \Gamma\left(\frac{n - 1}{2}\right)}
+\ ,       
+\end{equation}
+and
+\begin{eqnarray}
+\int\limits_{0}^{\infty} x^{2k + 2m + 1} K_{2m + 1}(x) dx &=& \frac{1}{2}
+\int\limits_{0}^{\infty}dx
+\int\limits_{-\infty}^{\infty}dt e^{-x \cosh t} e^{-(2m + 1)t} x^{2k + 2m
++ 1}
+\\
+\nonumber
+ &=& \frac{\Gamma(2k + 2m + 2)}{2} \int\limits_{-\infty}^{\infty}
+ \frac{e^{-(2m + 1)t} dt}{\cosh^{2k + 2m + 2}t}  
+\\
+\nonumber
+&=& 2^{2k + 2m}  
+ \Gamma\left(k + 2m + \frac{3}{2}\right) \Gamma\left(k + \frac{1}{2}\right)
+\ , 
+\end{eqnarray}
+we finally arrive at the serial expansion for the polarization operator
+\begin{equation}
+\label{serial}
+{\cal P}^{(m)}(\rho) 
+= \frac{(2m + 1)^2}{4}\sum_{k = 0}^{\infty} 
+\frac{\Gamma\left(k + \frac{1}{2}\right) \Gamma\left(k + m + \frac{1}{2}\right)
+      \Gamma\left(k + m + \frac{3}{2}\right) 
+      \Gamma\left(k + 2m + \frac{3}{2}\right)
+}{
+\Gamma\left(k + 1\right) \Gamma\left(k + m + 1\right)
+      \Gamma\left(k + m + 2\right) \Gamma\left(k + 2m + 2\right)
+}
+\rho^{2k + 2m} 
+\ . 
+\end{equation}
+(Note that each gamma function argument  in the denominator is shifted by
+1/2 from the one in the numerator. This provides~$1/k^2$ falloff of the
+coefficients.) 
+
+One can use this expansion to obtain the response function at~$m
+\approx -1/2$. Indeed, this response is dominated by the first term
+in the series. Writing~$m = -1/2 + \mu$, and expanding over~$ \mu \ll 1$, 
+one finds
+\begin{equation}
+\label{minus-half}
+P^{\left(-\frac{1}{2} + \mu\right)}(\rho) = 2 \mu \rho^{-1 + 2\mu} + O(\mu^2)
+\ .
+\end{equation}
+Then, one can check that the ``magic'' relation~(\ref{magic}) indeed 
+holds in this limit. 
+One can also get some 
+insight about the singular limit of~$m = -1/2$: 
+the response becomes more and more
+smeared as~$m$ approaches the value of~$1/2$, so that the total integral
+in Eq.~(\ref{magic})
+remains unchanged. 
+
+The serial expansion can be also used to calculate Mellin transform of
+the response. Let us calculate the response to a potential~$U = 1/r^{2z}$. 
+By adding the~$r < r'$ and~$r > r'$ contributions, we write
+\begin{eqnarray}
+\rho^{(m)}(r) &=& \frac{1}{2\pi^2 r^{1 + 2z}} \int\limits_{0}^{1} 
+{\cal P}^{(m)}(\rho) (\rho^{2z} + \rho^{1 - 2z}) d\rho 
+\nonumber
+\\
+&\equiv& \frac{1}{2\pi r^{1 + 2z}} P^{(m)}(z)
+\ .
+\end{eqnarray}
+Integrating the serial expansion~(\ref{serial}), we obtain the 
+expansion of~$P(z)$ over its poles:
+\begin{eqnarray}
+P^{(m)}(z) &=& \frac{(2m + 1)^2}{8} 
+\sum\limits_{k = 0}^{\infty}
+\frac{\Gamma\left(k + \frac{1}{2}\right) \Gamma\left(k + m + \frac{1}{2}\right)
+      \Gamma\left(k + m + \frac{3}{2}\right) 
+      \Gamma\left(k + 2m + \frac{3}{2}\right)
+}{
+\Gamma\left(k + 1\right) \Gamma\left(k + m + 1\right)
+      \Gamma\left(k + m + 2\right) \Gamma\left(k + 2m + 2\right)
+} 
+\nonumber
+\\
+&\times&
+\left( \frac{1}{z + m + k + \frac{1}{2}} + \frac{1}{ - z + m + k + 1}   \right)
+\ .
+\end{eqnarray}
+The function~$P(z)$ has an obvious symmetry~$z \to \frac{1}{2} - z$. 
+There are two equidistant sequence of poles: $z_k = -m - k - \frac{1}{2}$,  
+and~$z_k = m + k + 1$, forming a mirror-symmetric pattern around~$z = \frac{1}{4}$.
+Since the  residues fall off as~$1/k^2$, it should have no other 
+singularities,  and decay as~$P(z) \sim z^{-2}$ at large~$z$ (away from 
+the real axis). The magic relation~(\ref{magic}) is equivalent 
+to~$P(0) = P\left(\frac{1}{2}\right) = 1$, see the proof in the
+next Section.
+
+It is very tempting to attempt to sum up the series by finding the
+function with appropriate residues at the poles. The function
+\begin{eqnarray}
+P^{(m)}_{1}(z) &=&  
+\frac{\Gamma\left(-m - z\right)}{\Gamma\left(\frac{1}{2}  - m - z\right)} 
+\frac{\Gamma\left(m + 1 - z \right)}{ \Gamma\left(m + \frac{3}{2} - z\right)}
+\frac{\Gamma\left(-z\right)}{\Gamma\left(\frac{1}{2} - z\right)}
+\frac{\Gamma\left(1 - z\right)}{\Gamma\left(\frac{3}{2} - z\right)} 
+\nonumber
+\\
+&\times& \tan \pi z \tan \pi (z + m)
+\end{eqnarray}
+has required residues, at the poles, up to a constant factor. 
+However, it also has extra poles
+at~$z_k = k + 1$ and~$z_k = -\frac{1}{2} - k$, and therefore cannot
+represent~$P(z)$. The extra poles can be eliminated by
+multiplying~$P^{(m)}_1(z)$ by~$\sin^2 \pi z$. Such function would 
+have correct residues and no extra poles. However, it would also be 
+proportional to~$\sin^2 \pi z$ at large~$z$ and therefore can be
+exponentially large at the imaginary axis, which rules such a solution
+out. The search for the analytical continuation continues. 
+
+It is possible to sum up the series for half-integer momenta. 
+In this case, the two pole sequences eat each other. For example, the 
+polarization operator in a subcritical~$m = 1/2$ channel is 
+\begin{equation}
+P^{(m = \frac{1}{2})}(z) 
+= - \frac{1}{2}
+  \frac{\psi(z + 1) + \psi\left(\frac{3}{2} - z\right) - \psi(2) 
+        - \psi\left(\frac{1}{2}\right)}{\left(z - 1 \right)\left(z +
+	\frac{1}{2}\right)}
+\ , 
+\end{equation}
+where~$\psi(x) = \Gamma'(x) / \Gamma(x)$ is the digamma function. 
+Again, the magic relation holds: $P^{(\frac{1}{2})}(0) = 1$.
+
+For future reference, we also give the expression for~$m = 3/2$, 
+\begin{eqnarray}
+P^{(m = \frac{3}{2})}(z) 
+ &=& - 2
+  \left\{
+    \frac{2}{5} \frac{1}{\left(z + \frac{1}{2}\right)\left(z - 1\right)}
+    \left[
+       \psi\left(2 + z\right) 
+       + \psi\left(\frac{5}{2} - z\right) 
+       - \psi\left(3\right) 
+       - \psi\left(\frac{3}{2}\right) 
+    \right]
+  \right.
+\nonumber
+\\
+  &+&
+  \left.
+    \frac{3}{5} \frac{1}{\left(z + \frac{3}{2}\right)\left(z - 2\right)}
+    \left[
+       \psi\left(2 + z\right) 
+       + \psi\left(\frac{5}{2} - z\right) 
+       - \psi\left(4\right) 
+       - \psi\left(\frac{1}{2}\right) 
+    \right]
+  \right\}
+\ , 
+\end{eqnarray}
+and~$m = 5/2$:
+\begin{eqnarray}
+P^{(m = \frac{5}{2})}(z) 
+ &=& - \frac{9}{2} 
+  \left\{
+    \frac{9}{35} \frac{1}{\left(z + \frac{1}{2}\right)\left(z - 1\right)}
+    \left[
+       \psi\left(3 + z\right) 
+       + \psi\left(\frac{7}{2} - z\right) 
+       - \psi\left(4\right) 
+       - \psi\left(\frac{5}{2}\right) 
+    \right]
+  \right.
+\nonumber
+\\
+  &+&
+    \frac{4}{15} \frac{1}{\left(z + \frac{3}{2}\right)\left(z - 2\right)}
+    \left[
+       \psi\left(3 + z\right) 
+       + \psi\left(\frac{7}{2} - z\right) 
+       - \psi\left(5\right) 
+       - \psi\left(\frac{3}{2}\right) 
+    \right]
+\\
+\nonumber
+  &+&
+  \left.
+    \frac{10}{21} \frac{1}{\left(z + \frac{5}{2}\right)\left(z - 3\right)}
+    \left[
+       \psi\left(3 + z\right) 
+       + \psi\left(\frac{7}{2} - z\right) 
+       - \psi\left(6\right) 
+       - \psi\left(\frac{1}{2}\right) 
+    \right]
+  \right\}
+\ .
+\end{eqnarray}
+
+Another easy case is the one of large angular momentum, $m \gg 1$.
+In this case, the sum is determined by its terms with~$k \sim m$. 
+At large values of~$k$, 
+the ratio of two gamma functions can be approximated as
+~$\Gamma(x)/\Gamma\left(x + \frac{1}{2}\right) \approx x^{-1/2}$.
+Replacing the sum by the integral and introducing the 
+new variable, $q = k + m$, we write
+\begin{equation}
+P^{(m \gg 1)}(z) = m^2 \int\limits_{m}^{\infty}
+\frac{dq}{q\sqrt{q^2 - m^2}} \frac{q}{q^2 - z^2}
+\ .
+\end{equation}
+A trivial integration yields
+\begin{equation}
+P^{(m \gg 1)}(z) = \frac{m^2}{2iz \sqrt{m^2 - z^2}} 
+\ln\frac{1 + i z \sqrt{m^2 - z^2}}{1 - iz \sqrt{m^2 - z^2}}
+\ .
+\end{equation}
+The square root singularity at~$z > m$ is due to merging poles. 
+Again, the magic identity~(\ref{magic}) holds: $P^{(m \gg 1)}(0) = 1$.
+
+\section{Proof of the magic identity}
+\label{sec:magic}
+The expansion~(\ref{serial}) allows one to prove the magic identity.
+Let
+\begin{equation}
+C_k = 
+\frac{\Gamma\left(k + \frac{1}{2}\right) \Gamma\left(k + m + \frac{1}{2}\right)
+      \Gamma\left(k + m + \frac{3}{2}\right) 
+      \Gamma\left(k + 2m + \frac{3}{2}\right)
+}{
+\Gamma\left(k + 1\right) \Gamma\left(k + m + 1\right)
+      \Gamma\left(k + m + 2\right) \Gamma\left(k + 2m + 2\right)
+} 
+\ .
+\end{equation}
+Consider  partial sums
+\begin{eqnarray}
+S_n = 
+\sum\limits_{k = 0}^{n}
+C_k
+\left( \frac{1}{m + k + \frac{1}{2}} + \frac{1}{m + k + 1}   \right)
+\end{eqnarray}
+seeking~$S_n$ in the form
+\begin{equation}
+\label{r-ansatz}
+S_n = R_n C_n
+\ .
+\end{equation}
+Since~$S_n = S_{n - 1} + C_n$, and
+\begin{equation}
+\frac{C_n}{C_{n - 1}} = \frac{n (n + m) (n + m + 1) (n + 2m + 1)}{
+\left(n - \frac{1}{2}\right)
+\left(n + m - \frac{1}{2}\right)
+\left(n + m + \frac{1}{2}\right)
+\left(n + 2m + \frac{1}{2}\right)
+}
+\ , 
+\end{equation} 
+we can write recurrence relation for~$R_n$:
+\begin{equation}
+\label{recurrent}
+R_n = R_{n - 1} \frac{n (n + m) (n + m + 1) (n + 2m + 1)}{
+\left(n - \frac{1}{2}\right)
+\left(n + m - \frac{1}{2}\right)
+\left(n + m + \frac{1}{2}\right)
+\left(n + 2m + \frac{1}{2}\right)
+} + 
+\frac{1}{n + m + \frac{1}{2}} + \frac{1}{n + m + 1}
+\ .
+\end{equation}
+To find a solution to this equation, we introduce a new 
+variable 
+\begin{equation}
+\label{u-ansatz}
+R_n = u_n \frac{\left(n + \frac{1}{2}\right)
+\left(n + m + \frac{1}{2}\right)
+\left(n + 2 m + \frac{3}{2}\right)
+}{n + m + 1}
+\ .
+\end{equation}
+Such an ansatz removes three factors in the denominator.
+The recurrence equation~(\ref{recurrent}) then takes the form
+\begin{eqnarray}
+\label{recurrent-u}
+\left(n + \frac{1}{2}\right)
+\left(n + m + \frac{1}{2}\right)^2
+\left(n + 2 m + \frac{3}{2}\right) u_n
+&-& 
+n 
+\left(n + m + 1\right)^2
+\left(n + 2 m + 1\right) 
+u_{n - 1}
+\nonumber
+\\
+&=& 2n + 2m + \frac{3}{2}
+\ .
+\end{eqnarray}
+Interestingly, this equation admits a constant solution, $u_n = u_0$. 
+Indeed, 
+a straightforward calculation gives for the l.h.s.
+\begin{eqnarray}
+\left(n + \frac{1}{2}\right)
+\left(n + m + \frac{1}{2}\right)^2
+\left(n + 2 m + \frac{3}{2}\right)
+&-& n 
+\left(n + m + 1\right)^2
+\left(n + 2 m + 1\right)
+\\
+\nonumber
+ &=& \left(m + \frac{1}{2}\right)^2 \left( n + m + \frac{3}{4}\right)
+ \ , 
+\end{eqnarray}
+which coincides with the r.h.s. of Eq.(\ref{recurrent-u}) 
+up to a constant factor. 
+Thus, 
+\begin{equation}
+u_n = u_0 = \frac{2}{\left(m + \frac{1}{2}\right)^2}
+\end{equation}
+is a solution of Eq.~(\ref{recurrent-u}). One can also check that
+this solution satisfies the initial condition at~$n = 0$. Indeed, 
+the partial sum~$S_0$ is simply  
+\begin{equation}
+S_0 = C_0 \left(\frac{1}{m + \frac{1}{2}} + \frac{1}{m + 1}\right)
+= C_0 \frac{2 \left(m + \frac{3}{4}\right)}{\left(m + \frac{1}{2}\right)
+\left(m + 1\right)}
+\ .
+\end{equation}
+On the other hand, the ansatz~(\ref{r-ansatz}), (\ref{u-ansatz}) gives
+\begin{equation}
+S_0 = C_0 R_0 = C_0 u_0 
+\frac{\frac{1}{2}\cdot\left(m + \frac{1}{2}\right) 
+\left(2m + \frac{3}{2}\right)}{\left(m + 1\right)}
+= C_0 \frac{2 \left(m + \frac{3}{4}\right)}{\left(m + \frac{1}{2}\right)
+\left(m + 1\right)} 
+\ .
+\end{equation}
+Hence, we see that  
+\begin{eqnarray}
+\label{identity-sum}
+S &=& \sum_{k = 0}^{\infty} C_k 
+C_k
+\left( \frac{1}{m + k + \frac{1}{2}} + \frac{1}{m + k + 1}   \right) 
+\\
+\nonumber
+&=& 
+\lim_{n \to \infty} u_0 C_n \frac{\left(n + \frac{1}{2}\right)
+\left(n + m + \frac{1}{2}\right)
+\left(n + 2 m + \frac{3}{2}\right)}{n + m + 1} 
+\nonumber
+\\
+&=& \lim_{n \to \infty }u_0 n^2 C_n = u_0  
+= \frac{2}{\left(m + \frac{1}{2}\right)^2}
+\ .
+\end{eqnarray}
+Evaluating the left-hand side of the 
+magic identity~(\ref{magic}) with the help of serial
+expansion~(\ref{serial}) and employing the
+relation~(\ref{identity-sum}), one can 
+show that the magic identity holds for arbitrary values of~$m$. 
+
+\section{Second-order correction}
+
+To properly treat the band contribution to a better accuracy, one can
+add the second correction to the RPA analysis. Here we present
+the calculation of this correction without resolving the contribution
+of individual angular momentum channels. 
+
+By perturbation theory, the correction can be found as
+\begin{equation}
+\label{U2-initial}
+\delta \rho^{(2)}({\bf r})
+= -\mathop{\rm Im}\nolimits \int \frac{d\epsilon}{2\pi}
+\int d^2 r_1 d^2 r_2 
+\mathop{\rm Tr}\nolimits G(\epsilon, {\bf r} - {\bf r}_1 ) 
+G(\epsilon, {\bf r} - {\bf r}_1) G(\epsilon, {\bf r}_1 - {\bf r}_2)
+G(\epsilon, {\bf r}_2 - {\bf r}) U({\bf r}_1) U({\bf r}_2)
+\ , 
+\end{equation}
+where~$G$ is the causal Green's function. 
+In Fourier space, this can be cast in the form
+\begin{equation}
+\delta \rho^{(2)} ({\bf q}) = \int U({\bf q}_1) U({\bf q}_2) 
+\delta({\bf q} - {\bf q}_1 - {\bf q}_2) \Sigma ({\bf q}_1, {\bf q}_2)
+\frac{d^2{\bf q}_1}{(2\pi)^2}
+\frac{d^2{\bf q}_2}{(2\pi)^2}
+\ .
+\end{equation}
+The kernel~$\Sigma({\bf q}_1, {\bf q}_2)$ is given by 
+\begin{equation}
+\label{U2-momentum}
+\Sigma({\bf q}_1, {\bf q}_2) 
+=  \mathop{\rm Im}
+   \int\limits_{-\infty}^{\infty} \frac{d\epsilon}{2\pi}
+   \int\frac{d^2{\bf p}}{(2\pi)^2}
+   \mathop{\rm Tr}\nolimits G(\epsilon, {\bf p}) G(\epsilon, {\bf p} +
+   {\bf q}_1) G(\epsilon, {\bf p} + {\bf q}_2)
+\ , 
+\end{equation}
+The Green's function in the momentum space is
+\begin{equation}
+G(\epsilon, {\bf p}) = \frac{1}{{\tilde\epsilon} - {\bm \sigma} \cdot {\bf p}}
+= \frac{{\tilde\epsilon} + {\bm \sigma} \cdot {\bf p}}{
+   {\tilde\epsilon}^2 - {\bf p}^2
+   }
+   \ , 
+\end{equation}
+where~$\tilde{\epsilon} = \epsilon + \mu + i 0 \mathop{\rm sgn}
+\epsilon$
+takes care of the position of Fermi level~$\mu$ and Fermi statistics. 
+
+Calculation of the trace in Eq.(\ref{U2-momentum}) leads to the 
+following expression: 
+\begin{equation}
+\mathop{\rm Tr}\nolimits (\tilde\epsilon + {\bm \sigma} \cdot {\bf p})
+ \left[\tilde\epsilon + {\bm \sigma} \cdot ({\bf p} + {\bf q}_1) \right]
+ \left[\tilde\epsilon + {\bm \sigma} \cdot ({\bf p} + {\bf q}_2) \right]
+ \ , 
+\end{equation}
+which can be found by using the standard identities:
+\begin{equation}
+\mathop{\rm Tr}\nolimits {\bm \sigma} \cdot {\bf a} = 0
+\ , \qquad \mathop{\rm Tr}\nolimits ({\bm \sigma} \cdot {\bf a} )
+({\bm \sigma} \cdot {\bf b} ) = 2 {\bf a} \cdot {\bf b}, 
+\ , \qquad \mathop{\rm Tr}\nolimits ({\bm \sigma} \cdot {\bf a} )
+({\bm \sigma} \cdot {\bf b} ) ({\bm \sigma} \cdot {\bf c} ) = 
+2 i {\bf a} \cdot [{\bf b} \times {\bf c}]
+\ .
+\end{equation}
+This readily yieds
+\begin{equation}
+\label{U2-trace}
+\Sigma({\bf q}_1, {\bf q}_2) 
+= -2 \mathop{\rm Im}\nolimits \int\limits_{-\infty}^{\infty}
+\frac{d\epsilon}{2\pi}
+\int\frac{d^2{\bf p}}{(2\pi)^2} 
+\frac{
+  \tilde{\epsilon}
+  \left[\tilde{\epsilon}^2 
+     + {\bf p}\cdot({\bf p} + {\bf q}_1) 
+     + {\bf p}\cdot({\bf p} + {\bf q}_2) 
+     + ({\bf p} + {\bf q}_1)\cdot({\bf p} +  {\bf q}_2)
+  \right] 
+}{
+   (\tilde{\epsilon}^2 - {\bf p}^2) 
+   (\tilde{\epsilon}^2 - ({\bf p} + {\bf q}_1)^2)
+   (\tilde{\epsilon}^2 - ({\bf p} + {\bf q}_2)^2)
+}
+\ .
+\end{equation}
+Here we dropped the term proportional to mixed product
+${\bf p} \cdot [{\bf q}_1 \times {\bf q}_2]$. This term 
+is antisymmetric under permutation of the two wave vectors
+${\bf q}_1$ and~${\bf q}_2$ and therefore does not contribute
+to the total density response. 
+
+The integral over momenta can be transformed by employing 
+Feynman parameter trick. We employ the identity
+\begin{equation}
+\frac{1}{ABC} = 2\int\limits_{0}^{1} \int\limits_{0}^{1-x}
+\frac{dx dy}{\left[Ax + By + C(1 - x - y)\right]^3}
+\ , 
+\end{equation}
+which can be checked by explicit integration. 
+This brings the expression for the quadratic response to the form
+\begin{equation}
+\Sigma({\bf q}_1, {\bf q}_2)
+= -4 \mathop{\rm Im}\nolimits \int\limits_{-\infty}^{\infty}
+\int\limits_{0}^{1} \int\limits_{0}^{1-x}
+dx dy \frac{d\epsilon}{2\pi}
+\int\frac{d^2{\bf p}}{(2\pi)^2}
+\frac{
+  \tilde{\epsilon}
+  \left[\tilde{\epsilon}^2 
+      + {\bf p}\cdot({\bf p} + {\bf q}_1)
+      + {\bf p}\cdot({\bf p} + {\bf q}_2)
+      + ({\bf p} + {\bf q}_1)\cdot({\bf p} +  {\bf q}_2)
+   \right]
+}{
+    \left[\tilde{\epsilon}^2 - {\bf p}^2)
+			+ 2 x {\bf p} \cdot{\bf q}_1
+			+ 2 y {\bf p} \cdot{\bf q}_2
+			+ x {\bf q}_1^2  + y {\bf q}_2^2 \right]^3
+}
+\ .			      
+\end{equation}
+The denominator can be rewritten as 
+\begin{equation}
+\tilde{\epsilon}^2 - ({\bf p} + x {\bf q}_1 + y{\bf q}_2)^2 
++ x(1 - x)  {\bf q}_1^2 + y(1 - y) {\bf q}_2^2
++ 2 xy {\bf q}_1 \cdot{\bf q}_2
+\ .
+\end{equation}
+It is convenient to introduce the new integration variable
+\begin{equation}
+\tilde{\bf p} = {\bf p} +  x {\bf q}_1 + y{\bf q}_2 
+\ .
+\end{equation}
+This brings the quadratic response to the form
+\begin{equation}
+\label{U2-before-p}
+\Sigma({\bf q}_1, {\bf q}_2)
+= -4 \mathop{\rm Im}\nolimits \int\limits_{-\infty}^{\infty}
+\int\limits_{0}^{1} \int\limits_{0}^{1-x}
+dx dy \frac{d\epsilon}{2\pi}
+\int\frac{d^2\tilde{\bf p}}{(2\pi)^2}
+\frac{
+  \tilde{\epsilon}
+  \left[\tilde{\epsilon}^2  + 3\tilde{\bf p}^2 + \tilde{\bf
+  p}\cdot{\bf L} + K
+  \right]
+}{
+    \left[\tilde{\epsilon}^2 - \tilde{\bf p}^2 - Q^2 \right]^3
+}
+\ , 			      
+\end{equation}
+with~$Q^2 = {\bf q}_1^2 x(1 - x) + {\bf q}_2^2 y(1 - y) + 2{\bf q}_1
+\cdot {\bf q}_2 xy$. The quadratic expression in the denominator
+represents
+\begin{eqnarray}
+3{\bf p}^2 + \tilde{\bf p}\cdot{\bf L} + K(\tilde{\bf p}) &=& 
+\left(\tilde{\bf p} - {\bf q}_1 x - {\bf q}_2 y\right) 
+\cdot\left(\tilde{\bf p} + {\bf q}_1 (1 - x) - {\bf q}_2 y\right)
+\nonumber
+\\
+&+& 
+\left(\tilde{\bf p} - {\bf q}_1 x - {\bf q}_2 y\right)
+\cdot\left(\tilde{\bf p} - {\bf q}_1 x + {\bf q}_2 (1 - y)\right)
+\\
+&+&
+\left(\tilde{\bf p} + {\bf q}_1 (1 - x) - {\bf q}_2 y\right)
+\cdot\left(\tilde{\bf p} - {\bf q}_1 x + {\bf q}_2 (1 - y)\right)
+\nonumber
+\ .
+\end{eqnarray}
+We do not give the explicit forms of~$K$ and~${\bf L}$. Later, it
+becomes clear that their details are unimportant. We only note
+that these quantities are independent of~$\tilde{p}$
+and~$\tilde{\epsilon}$.
+
+The integral in Eq.~(\ref{U2-before-p}) can be easily evaulated. 
+The term proportional to~$\tilde{\bf p} \cdot {\bf L}$ vanishes 
+after integration over angles. Then, 
+\begin{equation}
+\int\limits_{0}^{\infty} \frac{2\pi \tilde{p} d\tilde{p}}{(2\pi)^2} 
+\frac{\tilde{\epsilon}(\tilde{\epsilon}^2 + 3{\tilde p}^2 + K)}{
+(\tilde\epsilon^2 - \tilde{p}^2 - Q^2)^3
+}
+= - \frac{\tilde{\epsilon}}{4\pi}
+\int\limits_{Q^2 - \tilde\epsilon^2}^{\infty} 
+\frac{dz}{z^3} \left(\tilde\epsilon^2 + K + 3 (z - Q^2 + \tilde\epsilon^2)\right)
+\ , 
+\end{equation}
+where~$z = \tilde{p}^2 + Q^2  - \tilde\epsilon^2$. Calculating the
+integral, we find
+\begin{equation}
+\int\limits_{0}^{\infty} {2\pi \tilde{p} d\tilde{p}}{(2\pi)^2}
+\frac{\tilde{\epsilon}(\tilde{\epsilon}^2 + 3{\tilde p}^2 + K)}{
+(\tilde\epsilon^2 - \tilde{p}^2 - Q^2)^3
+}
+= \frac{\tilde\epsilon}{4\pi}
+\left[
+\frac{4\tilde\epsilon^2 - 3Q^2 + K}{2 (\tilde\epsilon^2 - Q^2)^2}
+- \frac{3}{(\epsilon^2 - Q^2)}
+\right]
+= \frac{\tilde\epsilon}{8\pi}
+\frac{-2\tilde\epsilon^2 + 3 Q^2 + K}{(\epsilon^2 - Q^2)^2}
+\ .
+\end{equation}
+Thus, we find for the quadratic response
+\begin{equation}
+\Sigma({\bf q}_1, {\bf q}_2) 
+= - \frac{1}{4\pi^2} \mathop{\rm Im}\nolimits
+\int\limits_{0}^{1}dx
+\int\limits_{0}^{1-x}dy
+\int\limits_{-\infty}^{\infty} 
+\frac{\tilde\epsilon d\epsilon (-2\tilde\epsilon^2 + 3 Q^2 + K)}{
+   (\epsilon^2 - Q^2)^2}
+\ .
+\end{equation}
+To perform the integration over the electron energy~$\epsilon$, 
+we note the following. The integrand can be represented via partial
+fractions as
+\begin{equation}
+\label{U2-partial-fractions}
+\frac{\tilde\epsilon (-2\tilde\epsilon^2 + 3 Q^2 + K)}{
+    (\epsilon^2 - Q^2)^2}
+    = \frac{-2 \tilde\epsilon}{\epsilon^2 - Q^2} 
+    + \frac{B\tilde\epsilon}{(\epsilon^2 - Q^2)^2}
+\ , 
+\end{equation}
+where~$B$ is some $\epsilon$-independent quantity. 
+The integrals can be calculated by introducing the new variable~$t = 
+\tilde\epsilon^2$.
+Due to the definition of~$\tilde\epsilon \equiv \epsilon + \mu + 
+i 0 \mathop{\rm sgn}\epsilon$, the varialbe~$\tilde\epsilon$
+runs over a contour parallel to real axis, slightly above it
+for~$\mathop{\rm Re}\nolimits \tilde \epsilon > \mu$, 
+and slightly below for~$\mathop{\rm Re}\nolimits \epsilon < \mu$. 
+It is then clear that the second term in the
+expansion~(\ref{U2-partial-fractions}) becomes zero when integrated 
+over such a contour, so that the integral is in fact determined by the
+first term only: 
+\begin{equation}
+\Sigma({\bf q}_1, {\bf q}_2) 
+= \frac{1}{2\pi^2} \mathop{\rm Im}\nolimits
+\int\limits_{0}^{1}dx
+\int\limits_{0}^{1-x}dy
+\int\limits_{-\infty}^{\infty} 
+\frac{\tilde\epsilon d\epsilon}{
+   \epsilon^2 - Q^2}
+\ .
+%= {1}{4\pi^2} \mathop{\rm Im}\nolimits
+%\int\limits_{0}^{1}dx
+%\int\limits_{0}^{1}dy
+%\int\limits_{-\infty}^{\infty}
+%\frac{dt}{t  - Q^2}
+%\ .
+\end{equation}
+This expression formally diverges at large~$\epsilon$. This means that
+Eq.~(\ref{U2-initial}) must be regularised to ensure the proper
+T-ordering of the operators. This is usually achieved by introducing
+convergence factor~$e^{i \epsilon\tau}$, with~$\tau \to +0$. (See 
+Abrikosov, Gorkov and Dzyaloshinskii for a detailed discussion.)
+This prescription implies that we always close the 
+integration contour in the upper half-plane. 
+
+One can now calculate
+the integral using the method of residues. The integrand has
+two poles at~$\epsilon^2 = \pm Q^2$, each contributing the residue of~$1/2$.
+Besides that, closing the integration contour in the upper half-plane
+introduces a contribution of a semicircle, $-\pi i$. The contour 
+catches only  one pole if~$Q^2 < 0$, or if~$\mu > 0$ and $0 < Q^2 < \mu^2$.
+It catches two poles if~$\mu < 0$ and $Q^2 < \mu^2$. Finally, it does
+not catch the poles if~$\mu < 0$ and~$Q^2 < \mu^2$. 
+Adding the contributions, we find that if~$\mu > 0$ the integral is
+nonzero only if $0 < Q^2 < \mu^2$. Otherwise, the contribution of the 
+upper semicircle cancels the contribution of one pole, so that the 
+integral is equal to~$\pi i$. If, on the other hand, $\mu < 0$, 
+the integral is non-zero only if~$0 < Q^2 < \mu^2$, when no poles
+are catched by the contour. This gives
+\begin{equation}
+\Sigma({\bf q}_1, {\bf q}_2) 
+= \frac{\mathop{\rm sgn}\mu}{2\pi} 
+\int\limits_{0}^{1}dx
+\int\limits_{0}^{1 - x}dy 
+\theta\left[\mu^2 - Q^2(x, y)\right]
+\theta\left[Q^2(x, y)\right]
+\ , 
+%= {1}{4\pi^2} \mathop{\rm Im}\nolimits
+%\int\limits_{0}^{1}dx
+%\int\limits_{0}^{1}dy
+%\int\limits_{-\infty}^{\infty}
+%\frac{dt}{t  - Q^2}
+%\ .
+\end{equation}
+with~$Q^2 = q_1^2 x(1 - x) + q_2^2 y (1 - y)  - 2 {\bf q}_1 \cdot{\bf
+q}_2 xy$, as discussed before. 
+The step function~$\theta(x)$ is defined as usual: $\theta(x > 0)
+= 1$, and~$\theta(x < 0) = 0$. Assuming~$q=0$, one arrives at
+the quadratic contribution which can be obtained by Thomas-Fermi
+approximation: $\rho = (\mu + U)^2  / 4\pi$.
+
+In fact, one can show that the quantity~$Q^2(x, y)$ is always positive
+in the integration domain~$0 \leq y \leq 1 - x$, $0 \leq x \leq 1$. 
+Indeed, the quadratic part of this expression is nothing but
+$-({\bf q}_1 x + {\bf q}_2 y)^2$, and is therefore negatively 
+defined. Thus, the function could have a maximum inside the domain, 
+but its minimum is achieved at the boundary. 
+At the~$x = 0$ boundary, $Q^2(x, y) = q_1^2 y (1 - y)0$, 
+which is positive for~$0 < y < 1$. 
+At the~$y = 0$ boundary, $Q^2 = q_2^2 x (1 - x) \geq 0$. 
+At the~$y = 1 - x$ boundary, we find~$Q^2 = ({\bf q}_1 + {\bf q}_2)^2
+x(1 - x) \geq 0 $. Therefore, one can write
+\begin{equation}
+\Sigma({\bf q}_1, {\bf q}_2) 
+= \frac{\mathop{\rm sgn}\mu}{2\pi} 
+\int\limits_{0}^{1}dx
+\int\limits_{0}^{1 - x}dy 
+\theta\left[\mu^2 - Q^2(x, y)\right]
+\ . 
+%= {1}{4\pi^2} \mathop{\rm Im}\nolimits
+%\int\limits_{0}^{1}dx
+%\int\limits_{0}^{1}dy
+%\int\limits_{-\infty}^{\infty}
+%\frac{dt}{t  - Q^2}
+%\ .
+\end{equation}
+The maximal value of~$Q^2(x, y)$ inside the domain cannot 
+exceed~$(q_1 + q_2)^2/4$. Therefore, if~$q_1 + q_2 < 2|\mu|$, 
+$\Sigma({\bf q}_1, {\bf q}_2) = 1/4\pi \mathop{\rm sgn}\nolimits$.
+
+At larger~$q$, it quickly falls off. In particular, 
+for large values of~$q_{1, 2} \gg \mu$, the quantity~$Q^2 \gg \mu$ 
+nearly everywhere except for the corners~$x = y = 0$, $x = 1$ and~$y =
+1$. Near these corners,~$Q^2 \sim q^2 (x + y)$. This gives the 
+size of the actual integration domain to be~$x_0 \sim y_0 \sim \mu^2 /
+q^2$. The area is then~$x_0 y_0 \sim \mu^4/q^4$. Thus, we obtain the
+following estimate~$\Sigma (q\gg \mu) \sim \mu^4 / q^4$. 
+
+\end{document}
