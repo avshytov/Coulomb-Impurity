@@ -221,6 +221,52 @@ def testF(r1, r2, kF):
     print "F1 = ", F1, "F2 = ", F2, "diff = ", F1 - F2, "rel: ", (F1 - F2)/(F1 + F2)*0.5
     print "G = ", G, "diff = ", G - F1, "rel:", (G - F1)/(G + F1) * 0.5
 
+def quick_quad(F, r1, r2, nj):
+    s0 = 0.0; 
+    s1 = 0.0; 
+    if nj <= 3:
+       xi = [-0.7745966692414834, 0.0,               0.7745966692414834]
+       w  = [0.5555555555555556, 0.8888888888888888, 0.5555555555555556]
+    elif nj == 4: 
+       xi = [0.8611363115940526, 0.3399810435848562, -0.3399810435848562, -0.8611363115940526]
+       w  = [0.347854845137, 0.652145154863, 0.652145154863, 0.347854845137]
+    elif nj <= 7: 
+       xi = [0.906179845939, 0.538469310106, 0.0,          -0.538469310106, -0.906179845939]   
+       w  = [0.236926885056, 0.478628670499, 0.56888888888, 0.478628670499, 0.236926885056]
+    elif nj <= 13:
+       xi = [0.978228658146, 0.887062599768, 0.730152005574,
+             0.519096129207, 0.26954315595, 0.0,-0.26954315595, 
+             -0.519096129207, -0.730152005574,  -0.887062599768, 
+             -0.978228658146]
+       w = [ 0.0556685671162, 0.125580369465, 0.186290210928,
+             0.23319376459, 0.26280454451, 0.272925086778, 0.26280454451,  
+             0.233193764592, 0.186290210928, 0.125580369465, 
+             0.055668567116       
+            ]
+    else:
+       xi = [ 0.98799251802,  0.937273392401, 0.84820658341, 0.72441773136,  
+              0.570972172609, 0.39415134707,  0.201194093997, 0.0, 
+              -0.201194093997, -0.394151347078, -0.570972172609, 
+              -0.72441773136, -0.84820658341,  -0.937273392401, 
+              -0.98799251802
+            ]
+       w  = [ 0.0307532419961,0.0703660474881,0.107159220467,
+              0.139570677926, 0.166269205817, 0.186161000016,
+              0.198431485327, 0.202578241926, 0.198431485327,
+              0.186161000016, 0.166269205817, 0.139570677926,
+              0.107159220467, 0.0703660474881, 0.0307532419961
+            ]
+    rc = (r1 + r2) / 2.0
+    dr = r2 - r1
+    for xi_i, w_i in zip(xi, w):
+        r = rc + xi_i * dr / 2.0; 
+        Fr = F(r)
+        s0 += Fr * w_i
+        s1 += Fr * w_i * (r - rc)
+    s0 *= dr / 2.0; 
+    s1 *= dr / 2.0; 
+    return s0, s1
+                                                             
 def do_RPA_intra(r, kF):
     """
        Calculate the intraband kernel
@@ -236,6 +282,8 @@ def do_RPA_intra(r, kF):
     Gfun = mk_intra_spline(kF, max(r) * 2.0)
     for i in range(len(r)):
         print "Qintra:", i
+        def Fi(rx):
+            return rx * Gfun(r[i], rx)
         for j in range(0, len(r) - 1):
             #if i == j: continue
            # if (j  == len(r) - 1):
@@ -249,19 +297,21 @@ def do_RPA_intra(r, kF):
             #print r1, r2
             
             nj = int (dr / dr0) + 1
-            #print r[j], nj, dr, dr0, dr/dr0
-            Fk = np.zeros((nj,))
-            xk = np.linspace(r1, r2, nj + 2)[1:-1]
-            #Fk = np.zeros ((nj + 3,))
-            #xk = np.linspace(r1, r2, nj + 3)
-            for k in range(nj):
-                Fk[k] = Gfun(r[i], xk[k]) * xk[k]
-                #Fk[k] = F_intra2(r[i], xk[k], kF) * xk[k]  
-            dxk = dr / nj
+            if False:
+               #print r[j], nj, dr, dr0, dr/dr0
+               Fk = np.zeros((nj,))
+               xk = np.linspace(r1, r2, nj + 2)[1:-1]
+               #Fk = np.zeros ((nj + 3,))
+               #xk = np.linspace(r1, r2, nj + 3)
+               for k in range(nj):
+                   Fk[k] = Gfun(r[i], xk[k]) * xk[k]
+                   #Fk[k] = F_intra2(r[i], xk[k], kF) * xk[k]  
+               dxk = dr / nj
             
-            I1 = sum(Fk) * dxk
-            I2 = sum(Fk * (xk - rc)) * dxk
-            
+               I1 = sum(Fk) * dxk
+               I2 = sum(Fk * (xk - rc)) * dxk
+            else:
+               I1, I2 = quick_quad(Fi, r1, r2, nj)   
             Q1[i, j]     += 0.5 * I1 - I2 / dr
             Q1[i, j + 1] += 0.5 * I1 + I2 / dr            
             if False: #integrate_all:
@@ -363,6 +413,9 @@ def do_RPA_inter(r):
     Qs = mk_inter_spline()
     N = len(r)
     Q = np.zeros ((N, N))
+    r_0 = 2.0; 
+    u0 = 1.0 / np.sqrt(r**2 + r_0**2); 
+    rho0 = -1.0 * r_0 / 16.0 / np.sqrt(r**2 + r_0**2)**3; 
     for i in range (0, N):
         print "Qinter: ", i
         ri = r[i]
@@ -376,7 +429,7 @@ def do_RPA_inter(r):
             dv = v2 - v1
             vc = (v1 + v2)/2.0
             def f1(v):
-                return Qs(ri, ri * v)
+                return Qs(ri, ri * v) 
             def f2(v):
                 return Qs(ri, ri * v) * (v - vc) 
             if integrate_all or (abs(i - j) < 10) or (i < 20):
@@ -384,8 +437,8 @@ def do_RPA_inter(r):
                  I2, eps2 = integrate.quad(f2, v1, v2)
             else:
                  I1  = Qs(ri, ri * vc) * dv
-                 qs1 = Qs(ri, ri * v1)
-                 qs2 = Qs(ri, ri * v2)
+                 qs1 = Qs(ri, ri * v1) 
+                 qs2 = Qs(ri, ri * v2) 
                  I2  = (qs2 - qs1) * dv**2 / 12.0
             #print "<", i, j, I1 * ri, I2/dv * ri
             Q[i, j]     += ( I1 / 2.0 - I2 / dv ) * ri**2 * v1 
@@ -418,7 +471,7 @@ def do_RPA_inter(r):
             Q[i, j]     += ( I3 / 2.0 - I4 / du) * ri**2# * r2
     
         def f5(rx):
-            return Qs(ri, rx)
+            return Qs(ri, rx) 
         def f6(rx):
             return Qs(ri, rx) * rx
     
@@ -435,7 +488,6 @@ def do_RPA_inter(r):
         #I6 = I6a + I6b
         I5, eps5 = integrate.quad(f5, 0.0, r[0])
         I6, eps6 = integrate.quad(f6, 0.0, r[0])
-        
         if False and i < 5: 
            import pylab as pl
            rxvals = np.linspace(0.0, r[0], 100)
@@ -477,6 +529,7 @@ def do_RPA_inter(r):
         s0 = np.dot(Q[i, :], 1.0/r)
         s2 = np.dot(Q[i, :], r/r)
         Q[i, i] -= r[i] * s0  
+        #Q[i, i] += rho0[i] / u0[i] - np.dot(Q[i, :], u0) / u0[i]; 
         s = np.dot(Q[i, :], 1.0/r)
         s1 = np.dot(Q[i, :], r/r)
         print "s: ", s, s1, s0, s2

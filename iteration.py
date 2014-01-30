@@ -158,7 +158,7 @@ def solve_coulomb(rho_U, Uext, r, tau_u_set, tau_rho_set, **kwarg):
         
         display_callback(it, r, U, rho, U1, rho1)
         
-        if (err_U < (1e-7)) and (err_rho < (1e-7)):
+        if (err_U < (1e-4)) and (err_rho < (1e-5)):
             break
         if (err_U > 1e+6) or (err_rho > 1e+6): 
             print "A clear divergence"

@@ -115,6 +115,7 @@ def do_kernel_m_intra(r, mvals, kF):
         print "m-intra; i = ", i, sum(Q1[i, :]) * 8.0 * math.pi**2
     return Q1 * 4.0 * math.pi 
             
+
 def do_kernel_m_inter(r, mvals):
     Qs = RPA.Qs_spline(mvals)
     N = len(r)
@@ -131,14 +132,14 @@ def do_kernel_m_inter(r, mvals):
             def f1(rx):
                 return Qs(ri, rx)
             def f2(rx):
-                return Qs(ri, rx) * (rx - rc)
+                return Qs(ri, rx) * (rx - rc) 
             if integrate_all or (abs(i - j) < 10) or (i < 20):
                  I1, eps1 = integrate.quad(f1, r1, r2)
                  I2, eps2 = integrate.quad(f2, r1, r2)
             else:
                  I1 = Qs(ri, rc) * dr
-                 qs1 = Qs(ri, r1)
-                 qs2 = Qs(ri, r2)
+                 qs1 = Qs(ri, r1) 
+                 qs2 = Qs(ri, r2) 
                  I2 = (qs2 - qs1) * dr**2 / 12.0
             Q[i, j]     += ( I1 / 2.0 - I2 / dr ) * r1 
             Q[i, j + 1] += ( I1 / 2.0 + I2 / dr ) * r2
@@ -166,9 +167,9 @@ def do_kernel_m_inter(r, mvals):
             Q[i, j]     += ( I3 / 2.0 - I4 / drho) 
     
         def f5(rx):
-            return Qs(ri, rx)
+            return Qs(ri, rx) 
         def f6(rx):
-            return Qs(ri, rx) * rx
+            return Qs(ri, rx)  * rx
     
         r1 = r[0]
         r2 = r[1]

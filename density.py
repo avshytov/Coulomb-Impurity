@@ -42,8 +42,8 @@ class RPA_tot:
        self.Q_inter = Kernel(rexp, Q_inter)
        Q_intra = np.zeros((len(r), len(r)))
        if (kF * r.max() > 0.01):
-           Q_intra = mkrpa2.RPA_intra(r, kF)
-       self.Q_intra = Kernel(r, Q_intra)
+           Q_intra = mkrpa2.RPA_intra(rexp, kF)
+       self.Q_intra = Kernel(rexp, Q_intra)
        
     def __call__ (self, r, U): 
         return self.Q_inter(r, U) + self.Q_intra(r, U)
@@ -54,9 +54,9 @@ class RPA_m:
        self.Qm_inter = Kernel(rexp, Qm_inter)
        Qm_intra = np.zeros((len(r), len(r)))
        if (kF * r.max() > 0.01):
-           Qm_intra = rpam.kernel_m_intra(r, mlist, kF) 
+           Qm_intra = rpam.kernel_m_intra(rexp, mlist, kF, '4') 
            #rpakernel.kernel_m_intra(r, mlist, kF)
-       self.Qm_intra = Kernel(r, Qm_intra)
+       self.Qm_intra = Kernel(rexp, Qm_intra)
     def __call__ (self, r, U): 
         return self.Qm_inter(r, U) + self.Qm_intra(r, U)
         
@@ -223,6 +223,30 @@ if __name__ == '__main__':
    Z = 0.02
    r_0 = 1.0
    U = Z / np.sqrt(r**2 + r_0**2)
+   #def Ur(rx):
+   #    if rx > r_0: 
+   #       return -Z/rx 
+   #    return -Z / r_0
+   #U = np.vectorize(Ur)(r)
+   def rho_b(rx):
+       #if rx > r_0: return 0.0; 
+       #return Z / math.pi / r_0**2
+       return r_0**2 / math.pi / (rx**2 + r_0**2)**2 * Z
+      
+   
+   rexp = util.make_exp_grid(0.001, 50.0, 1000)
+   Qcoul = Kernel(rexp, coulomb.kernel(rexp))
+   rho_bare = np.vectorize(rho_b)(r)
+   #U = Qcoul(r, rho_bare)
+   #U[0:3] = U[3]
+   import pylab as pl
+   pl.plot (r, U)
+   pl.plot (r, Z / np.sqrt(r**2 + r_0**2))
+   pl.figure()
+   pl.loglog(r, np.abs(U))
+   pl.loglog(r, Z / np.sqrt(r**2 + r_0**2))
+   pl.show ()
+   #rho_th = - math.pi / 8.0 * rho_bare
    rho_th = -Z * r_0 / 16.0 / np.sqrt(r**2 + r_0**2)**3
    
    rho_RPA = graphene.rho_RPA(U)
@@ -247,14 +271,16 @@ if __name__ == '__main__':
        Qths = []
        print 'Total Charge Calculation: rmin=', rmin, 'rmax=', rmax
        #for Z0 in [0.1]: 
-       for Z0 in [0.1, 0.2, 0.3, 0.4, 0.5]:
+       #for Z0 in [-0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5]:
+       for Z0 in np.linspace(-0.5, 0.5, 41):
        #for Z0 in [0.6, 0.8, 1.0, 1.2, 1.4]:
            print 'Calculating for Z0=',Z0 
            Ugrid.append(Z0)
            Qtheory = (( r_0 / np.sqrt(r_0**2+rmin**2))
                       - (r_0/ np.sqrt(r_0**2 + rmax**2)))
            Qtheory *= Z0 * np.pi / 8.0
-           Us = Z0 / np.sqrt(r**2 + r_0**2)
+           #Us = Z0 / np.sqrt(r**2 + r_0**2)
+           Us = Z0 / Z * U
            rhotot = graphene.rho_U(Us)
            
            rho_rpa = -Z0 / 16.0 * r_0 / np.sqrt(r**2 + r_0**2)**3
@@ -271,22 +297,30 @@ if __name__ == '__main__':
            Qrpa *= -2.0 * np.pi
            print "Z0 = ", Z0, "Qsim = ", Qsim, "Qrpa = ", Qrpa, "th: ", Qtheory
            import pylab as pl
-           pl.figure()
-           pl.title('Total density for Z0=%g'%Z0)
-           pl.plot(r,rhotot, label='total charge density')
-           pl.plot(r,rho_rpa, label='RPA charge density')
-           pl.plot(r, rho_rpa - rhotot, label='diff')
-           pl.legend()
-           pl.figure()
-           pl.title('Total density for Z0=%g'%Z0)
-           pl.plot(r,r*rhotot, label='r*total charge density')
-           pl.plot(r,r*rho_rpa, label='r*RPA charge density')
-           pl.plot(r, r*(rho_rpa - rhotot), label='r*diff')
-           pl.legend()
-           pl.show()
-           
+           if False:
+              pl.figure()
+              pl.title('Total density for Z0=%g'%Z0)
+              pl.plot(r,rhotot, label='total charge density')
+              pl.plot(r,rho_rpa, label='RPA charge density')
+              pl.plot(r, rho_rpa - rhotot, label='diff')
+              pl.legend()
+              pl.figure()
+              pl.title('Total density for Z0=%g'%Z0)
+              pl.plot(r,r*rhotot, label='r*total charge density')
+              pl.plot(r,r*rho_rpa, label='r*RPA charge density')
+              pl.plot(r, r*(rho_rpa - rhotot), label='r*diff')
+              pl.legend()
+              pl.show()
+           f = open('rho-Z=%g.dat' % (Z0), 'w')
+           for i in range(len(r)):
+               f.write('%g\t%g\n' % (r[i], rhotot[i]))
+           f.close()
            Qtots.append(Qsim)
            Qths.append(Qtheory)
+       f = open("Q-data.dat", 'w')
+       for i in range(len(Ugrid)):
+           f.write("%g\t%g\t%g\n" % (Ugrid[i], Qtots[i], Qths[i]))
+       f.close()
        Ugrid = np.array(Ugrid)
        Q_sim = np.array(Qtots)
        Q_linear = np.array(Qths)

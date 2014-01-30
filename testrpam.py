@@ -2,17 +2,16 @@ import rpam
 import rpakernel
 
 import numpy as np
-#r = np.linspace(0.01, 50.0, 500)
-#m = np.arange(0.0, 21.0, 1.0)
-r = np.linspace(0.1, 10.0, 100)
-m = np.arange(0.0, 2.0, 1.0)
+r = np.linspace(0.01, 50.0, 500)
+m = np.arange(0.0, 31.0, 1.0)
 print r
 print m
-kF = 1.0
+kF = 3.0
 
-Q = rpam.kernel_m_intra(r, m, kF)
+Q = rpam.kernel_m_intra(r, m, kF, '3')
 
-Q1 = rpakernel.kernel_m_intra(r, m, kF)
+#Q1 = rpakernel.kernel_m_intra(r, m, kF)
+Q1 = rpam.kernel_m_intra(r, m, kF, '4')
 
 import pylab as pl
 

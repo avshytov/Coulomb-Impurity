@@ -24,11 +24,11 @@ Nf = 4
 alpha = 0.9
 
 
-tau_u_set = iteration.make_tau_set(3, 0.2, 0.1)
+tau_u_set = iteration.make_tau_set(3, 0.1, 0.05)
 print "taus: ", tau_u_set
 tau_rho_set = list(tau_u_set)
 Uext = -Z * alpha / np.sqrt(r**2 + r_0**2)
-rho_ext = -Z * alpha / 16.0 / np.sqrt(r**2 + r_0**2)**3  
+rho_ext = Z * alpha / 16.0 / np.sqrt(r**2 + r_0**2)**3  
 
 graphene = density.GrapheneResponse (r, Ef, Ecut=Ecut, Mmax=Mmax)
 
