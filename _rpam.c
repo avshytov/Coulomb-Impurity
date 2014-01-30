@@ -139,6 +139,7 @@ double Q_intra_sub(double kmin, double kmax, int *mvals, int Nm, double r1, doub
     return result; 
 }
 
+
 static
 double Q_intra(double kF, int *mvals, int Nm, double r1, double r2) {
        double rmax = (r1 > r2) ? r1 : r2; 
@@ -181,11 +182,122 @@ double Q_intra_old(double kF, int *mvals, int Nm, double r1, double r2) {
 }
 
 static
+void Q_intra_quad(double kF, int *mvals, int Nm, double ri, 
+		  double *xi, double *w, int nw,
+		  double r1, double r2, 
+		  double *S0, double *S1) 
+{
+     *S0 = *S1 = 0.0;
+     double rc = (r1 + r2) / 2.0; 
+     double dr = (r2 - r1); 
+     for (int i = 0; i < nw; i ++) {
+          double r  = rc + xi[i] * dr / 2.0;
+	  double Qr = Q_intra(kF, mvals, Nm, ri, r);
+	  *S0 += Qr * r * w[i]; 
+	  *S1 += Qr * r * (r - rc) * w[i]; 
+     }
+     *S0 *= dr / 2.0; 
+     *S1 *= dr / 2.0; 
+}
+
+static 
+void Q_intra_int(double kF, int *mvals, int Nm, double ri,  
+		 double r1, double r2, int nj, 
+		 double *S0, double *S1) {
+       /* if (nj == 1) {
+	   double xi[] = {0.0}; 
+	   double w[]  = {2.0}; 
+	   Q_intra_quad(kF, mvals, Nm, ri, xi, w, sizeof(w)/sizeof(*w), r1, r2, S0, S1); 
+       } else if (nj == 2) {
+           double xi[] = {-0.5773502691896258, 0.5773502691896258}; 
+	   double w [] = {1.0,                 1.0}; 
+	   Q_intra_quad(kF, mvals, Nm, ri, xi, w, sizeof(w)/sizeof(*w), r1, r2, S0, S1);
+       } else */if (nj <= 3) {
+           double xi[] = {-0.7745966692414834, 0.0,               0.7745966692414834}; 
+	   double w [] = {0.5555555555555556, 0.8888888888888888, 0.5555555555555556};
+	   Q_intra_quad(kF, mvals, Nm, ri, xi, w, sizeof(w)/sizeof(*w), r1, r2, S0, S1);
+       } else if (nj == 4) {
+           double xi[] = {0.8611363115940526, 0.3399810435848562, -0.3399810435848562, -0.8611363115940526}; 
+	   double w [] = {0.347854845137, 0.652145154863, 0.652145154863, 0.347854845137};
+	   Q_intra_quad(kF, mvals, Nm, ri, xi, w, sizeof(w) /sizeof(*w), r1, r2, S0, S1);
+       }  else if (nj <= 7) {
+           double xi[] = {0.906179845939, 0.538469310106, 0.0,          -0.538469310106, -0.906179845939}; 
+	   double w [] = {0.236926885056, 0.478628670499, 0.56888888888, 0.478628670499, 0.236926885056};
+	   Q_intra_quad(kF, mvals, Nm, ri, xi, w, sizeof(w) / sizeof(*w), r1, r2, S0, S1);
+       } else if (nj <= 13) { // OK
+	   double xi[] = {
+	        0.978228658146, 0.887062599768, 0.730152005574,  
+	        0.519096129207, 0.26954315595, 
+	        0.0, 
+	        -0.26954315595, -0.519096129207, 
+	        -0.730152005574,  -0.887062599768, -0.978228658146
+	   }; 
+	   double w[] = {
+	        0.0556685671162, 0.125580369465, 0.186290210928, 
+	        0.23319376459, 0.26280454451, 
+	        0.272925086778, 
+	        0.26280454451,  0.233193764592, 
+	        0.186290210928, 0.125580369465, 0.055668567116
+	   }; 
+	   Q_intra_quad(kF, mvals, Nm, ri, xi, w, sizeof(w)/sizeof(*w), 
+			r1, r2, S0, S1);
+       } else {
+	   double xi[] = {
+	        0.98799251802,  0.937273392401, 0.84820658341, 
+	        0.72441773136,  0.570972172609, 0.39415134707, 
+	        0.201194093997, 
+	        0.0, 
+	        -0.201194093997, 
+	        -0.394151347078, -0.570972172609, -0.72441773136, 
+	        -0.84820658341,  -0.937273392401, -0.98799251802
+	   };
+	   double w[]= {
+	        0.0307532419961, 0.0703660474881, 0.107159220467, 
+	        0.139570677926, 0.166269205817, 0.186161000016, 
+	        0.198431485327, 0.202578241926, 0.198431485327, 
+	        0.186161000016, 0.166269205817, 0.139570677926, 
+	        0.107159220467, 0.0703660474881, 0.0307532419961
+	   }; 
+           Q_intra_quad(kF, mvals, Nm, ri, xi, w, sizeof(w)/sizeof(*w), 
+			r1, r2, S0, S1);                   
+       } /*else if (nj <= 21) {
+      	   Q_intra_quad(kF, mvals, Nm, ri, xi, w, sizeof(w)/sizeof(*w), 
+			r1, r2, S0, S1);        
+       }*/ /*else if (nj <= 25) {
+	   Q_intra_quad(kF, mvals, Nm, ri, xi, w, sizeof(w)/sizeof(*w), 
+			r1, r2, S0, S1);        
+       } else if (nj <= 31) {
+	   Q_intra_quad(kF, mvals, Nm, ri, xi, w, sizeof(w)/sizeof(*w), 
+			r1, r2, S0, S1);        
+       } else { 
+	       fprintf (stderr, "normal quad: %d %g %g %g\n", nj, ri, r1, r2); 
+               *S0 = 0.0; 
+	       *S1 = 0.0;
+               double rc = (r1 + r2) / 2.0; 
+               double dr = (r2 - r1); 
+	       double drk = dr / nj; 
+	       //fprintf (stderr, "nj = %d\n", nj); 
+	       
+	       for (int k = 1; k < nj + 1; k ++) {
+		    double rk = r1 + dr / (nj + 1) * k; 
+		    double Qk = Q_intra(kF, mvals, Nm, ri, rk); 
+	            *S0 += Qk * rk; 
+		    *S1 += Qk * rk * (rk - rc); 
+	       }
+	       *S0 *= drk; 
+	       *S1 *= drk;       
+       }*/
+}
+
+
+static
 void do_kernel_m_intra(double **Q, double *r, int Nr, 
 		       int *mvals, int Nm, 
 		       double kF) {
    
-     double dr0 = 0.1; 
+     double dr0 = 0.1;
+     double S0, S1; 
+   
      if (kF > 1.0)
          dr0 = dr0 / kF ; 
    
@@ -198,28 +310,34 @@ void do_kernel_m_intra(double **Q, double *r, int Nr,
 	       //fprintf (stderr, "i = %d j = %d\n", i, j); 
 	       double r1 = r[j]; 
 	       double r2 = r[j + 1]; 
-	       double rc = (r1 + r2) / 2.0; 
+	       //double rc = (r1 + r2) / 2.0; 
 	       double dr = r2 - r1; 
 	       int nj = floor(dr / dr0)  + 1; 
-	       double S0 = 0.0; 
-	       double S1 = 0.0;
-	       double drk = dr / nj; 
+	       S0 = 0.0; 
+	       S1 = 0.0;
+	       
+	       Q_intra_int(kF, mvals, Nm, r[i], r1, r2, nj, &S0, &S1); 
+	       //double drk = dr / nj; 
 	       //fprintf (stderr, "nj = %d\n", nj); 
 	       
-	       for (int k = 1; k < nj + 1; k ++) {
-		    double rk = r1 + (r2 - r1) / (nj + 1) * k; 
-		    double Qk = Q_intra(kF, mvals, Nm, r[i], rk); 
-	            S0 += Qk * rk; 
-		    S1 += Qk * rk * (rk - rc); 
-	       }
-	       S0 *= drk; 
-	       S1 *= drk;
+	       //for (int k = 1; k < nj + 1; k ++) {
+	       //	    double rk = r1 + (r2 - r1) / (nj + 1) * k; 
+	       //	    double Qk = Q_intra(kF, mvals, Nm, r[i], rk); 
+	       //     S0 += Qk * rk; 
+	       //	    S1 += Qk * rk * (rk - rc); 
+	       //}
+	       //S0 *= drk; 
+	       //S1 *= drk;
 	       /**/
 	       //Q[i][j] += Q_intra(kF, mvals, Nm, r[i], r[j]) * rc * dr; 
 	       Q[i][j]     += 0.5 * S0 - S1 / dr; 
 	       Q[i][j + 1] += 0.5 * S0 + S1 / dr; 
 	  }
-	  Q[i][0] += Q_intra(kF, mvals, Nm, r[i], 0.0) * r[0] * r[0] / 2.0; 
+	  //Q[i][0] += Q_intra(kF, mvals, Nm, r[i], 0.0) * r[0] * r[0] / 2.0; 
+	  S0 = 0.0; 
+	  S1 = 0.0; 
+	  Q_intra_int(kF, mvals, Nm, r[i], 0.0, r[0], 5, &S0, &S1);
+	  Q[i][0] += S0; 
 	  double sq = 0.0; 
 	  for (int j = 0; j < Nr; j ++)
 	       sq += Q[i][j]; 
@@ -295,8 +413,44 @@ PyObject* kernel_m_intra(PyObject * self, PyObject * args) {
           return Py_BuildValue("N", Q_obj);    
 }
 
+static 
+PyObject* qm_intra(PyObject * self, PyObject * args) {
+          double kF; 
+          double r1, r2; 
+          int *mvals; 
+          double Qvalue; 
+          //PyObject *Q_obj; 
+          int Nm; 
+   
+          PyObject *mvals_obj, *r_obj; 
+          if (!PyArg_ParseTuple(args, "dOdd", &kF, &mvals_obj, &r1, &r2)) {
+	       PyErr_SetString(error_obj, "invalid arguments to qm_intra"); 
+	       return NULL; 
+	  }
+          if (!PyList_Check(mvals_obj)) {
+	       PyErr_SetString(error_obj, "mvals is not a list"); 
+	       return NULL; 
+	  }
+          Nm = PyList_Size(mvals_obj); 
+          mvals = PyMem_New(int, Nm); 
+          for (int i = 0; i < Nm; i ++) {
+	       PyObject *val = PyList_GetItem(mvals_obj, i); 
+	       double m_i; 
+	       PyArg_Parse(val, "d", &m_i); 
+	       mvals[i] = (int)floor(m_i);
+   	       if (fabs(m_i - floor(m_i)) > 1e-2) {
+	           fprintf (stderr, "Warning: only integer values of m are now supported! %g %d\n", m_i, mvals[i]); 
+	       }
+	  }
+   
+          Qvalue = Q_intra(kF, mvals, Nm, r1, r2);    
+          PyMem_Free(mvals); 
+          return Py_BuildValue("d", Qvalue);    
+}
+
 static struct PyMethodDef module_methods[] = {
    {"kernel_m_intra", kernel_m_intra, METH_VARARGS, "Calculates RPA intraband contribution"}, 
+   {"qm_intra",       qm_intra,       METH_VARARGS, "Calculates RPA intraband contribution"}, 
    {NULL, NULL, 0, NULL},
 };
 
