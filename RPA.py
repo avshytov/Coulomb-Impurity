@@ -137,13 +137,17 @@ def Q_reg(r1, r2, eps):
 
 
 def Qs_spline(mvals):
-    xvals = arange (0.0001, 1.0001, 0.001)
+    xvals = arange (0.0000, 1.0001, 0.001)
     def Qmsum(x):
         s = 0.0
         for m in mvals:
             s += Qm(m, x, 1.0)
         return s    
     yvals = vectorize(Qmsum)(xvals)
+    #import pylab as pl 
+    #pl.plot(xvals, yvals)
+    #pl.title('m = %g %g' % (mvals[0], mvals[-1]))
+    #pl.show()
     spl = interpolate.splrep(xvals, yvals)
     def Qm_s (r1, r2):
         if (r1 <= r2):

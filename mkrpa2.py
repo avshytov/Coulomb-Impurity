@@ -325,9 +325,11 @@ def F_inter(r1, r2, eps):
     """
        Calculate the interband kernel
     """
+    C_eps = 3.0; # was 3.0
+    epsr = eps * math.sqrt(r1 * r2); 
     def f(theta):
-        R = math.sqrt(eps**2 + r1*r1 + r2*r2 - 2 * r1 * r2 * math.cos(theta))
-        return (1.0 - 3.0*eps**2/R**2) / R**3
+        R = math.sqrt(epsr**2 + r1*r1 + r2*r2 - 2 * r1 * r2 * math.cos(theta))
+        return (1.0 - C_eps*epsr**2 / R**2) / R**3
     I, epsI = integrate.quad(f, 0.0, math.pi)
     return I / 16.0  / math.pi
 
@@ -338,8 +340,8 @@ def mk_inter_spline():
        and a function that reuses this interpolation
     """
     def F(x):
-        return F_inter(x, 1.0, 1e-2)
-    xvals = np.arange(0.0001, 1.0001, 0.001)
+        return F_inter(x, 1.0, 2e-3)
+    xvals = np.arange(0.0000, 1.0001, 0.001)
     yvals = np.vectorize(F)(xvals)
     spl = interpolate.splrep(xvals, yvals)
     def Q_spline(r1, r2):
@@ -357,7 +359,7 @@ def do_RPA_inter(r):
     """
        Calculate the interband kernel
     """
-    integrate_all = False
+    integrate_all = True
     Qs = mk_inter_spline()
     N = len(r)
     Q = np.zeros ((N, N))
@@ -424,8 +426,27 @@ def do_RPA_inter(r):
         r1 = r[0]
         r2 = r[1]
         dr = r2 - r1
+        #rab = 0.999 * r[0]
+        #I5a, eps5a = integrate.quad(f5, 0.0, rab)
+        #I5b, eps5b = integrate.quad(f5, rab, r[0])
+        #I6a, eps6a = integrate.quad(f6, 0.0, rab)
+        #I6b, eps6b = integrate.quad(f6, rab, r[0])
+        #I5 = I5a + I5b
+        #I6 = I6a + I6b
         I5, eps5 = integrate.quad(f5, 0.0, r[0])
         I6, eps6 = integrate.quad(f6, 0.0, r[0])
+        
+        if False and i < 5: 
+           import pylab as pl
+           rxvals = np.linspace(0.0, r[0], 100)
+           pl.plot(rxvals, np.vectorize(f5)(rxvals), label='f5')
+           pl.plot(rxvals, np.vectorize(f6)(rxvals), label='f6')
+           pl.legend()
+           pl.show()
+        #print I5, I6, I5a, I6a, eps5a, eps6a, I5b, I6b, eps5b, eps6b
+        #print I5 * r2 / dr, I6 / dr
+        #print I5 * r2 / dr - I6 / dr
+        #print -I5 * r1 / dr + I6 / dr
         Q[i, 0] += (  I5*r2/dr - I6/dr) * r1 
         Q[i, 1] += ( -I5*r1/dr + I6/dr) * r2
     

@@ -1,7 +1,9 @@
 #include <Python.h>
 #include <math.h>
 #include <stdio.h>
+#ifdef NEED_MALLOC_H
 #include <malloc.h>
+#endif 
 
 static PyObject * error_obj;
 
