@@ -15,10 +15,10 @@ rmin = 0.01
 rmax = 50.0
 
 r = util.make_lin_grid(rmin, rmax, N)
-Ef = -1e-4
+Ef = 0.3
 B0 = 0.0
 Ecut = -3.0
-Z = 2.0
+Z = 3
 r_0 = 1.0
 Nf = 4
 alpha = 0.9
@@ -27,7 +27,7 @@ alpha = 0.9
 tau_u_set = iteration.make_tau_set(3, 0.2, 0.1)
 print "taus: ", tau_u_set
 tau_rho_set = list(tau_u_set)
-Uext = Z * alpha / np.sqrt(r**2 + r_0**2)
+Uext = -Z * alpha / np.sqrt(r**2 + r_0**2)
 rho_ext = -Z * alpha / 16.0 / np.sqrt(r**2 + r_0**2)**3  
 
 graphene = density.GrapheneResponse (r, Ef, Ecut=Ecut, Mmax=Mmax)
@@ -51,7 +51,8 @@ def rho_RPA(U, r):
 #pl.legend()
 #pl.show()
 
-fname_templ = util.makeFileTemplate("data/denssim-Z=%g-N=%g-Nfa=%g" % (Z, N, Nf*alpha))
+fname_templ = util.makeFileTemplate("data/denssim-Z=%g-N=%g-Nfa=%g-Ef=%g" 
+                                    % (Z, N, Nf*alpha, Ef))
 
 iteration.solve_coulomb(rho_U, Uext, r, tau_u_set, tau_rho_set, 
                         fname_template=fname_templ)

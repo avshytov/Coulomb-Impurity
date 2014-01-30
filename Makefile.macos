@@ -1,0 +1,21 @@
+#INC = -I/usr/include/python2.7
+INC = -I/sw/include/python2.7
+LIB = -lm -L/sw/lib/python2.7/config -lpython2.7
+#ARCH = -arch x86_64 -arch i386
+ARCH = -arch x86_64 
+CC = /usr/bin/gcc -v $(ARCH)
+LD = /usr/bin/gcc -v -shared $(ARCH)
+LDFLAGS = $(LIB)
+CFLAGS = -fPIC -std=gnu99 $(INC) -Wall
+TARGET=_rpam.so
+SRC = _rpam.c
+OBJ = $(SRC:.c=.o)
+
+%.o: %.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+	
+_rpam.so: $(OBJ)
+	$(LD)  -o $@ $(OBJ) $(LDFLAGS)
+	
+clean:: 
+	rm $(OBJ) $(TARGET)
