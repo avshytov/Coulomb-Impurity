@@ -173,28 +173,17 @@ def test_rho():
     mlist = np.arange(0, 10.0, 1.0)
     r_0 = 1.0
     r = np.linspace(0.1, 50.0, 500)
-<<<<<<< HEAD
 #    figure()
-=======
-    figure()
->>>>>>> 5a35562ad06105d4e8c8b30517cd2f661b7263ec
  
     for Z in [0.0, 0.1, 0.2, 0.3]:
         U = - Z / np.sqrt(r**2 + r_0**2)
         rho_0 = - (Emax**2 - Emin**2) / 4.0 / math.pi
         rho_rpa = -Z / 16.0 * r_0 / np.sqrt(r**2 + r_0**2)**3
         rho = rhocalc(Emin, Emax, r, U, mlist)
-<<<<<<< HEAD
 #        plot (r, rho, label='Z = %g' % Z)
 #        plot (r, rho_0 + rho_rpa, label='Z = %g, rpa' % Z)
 #    legend()
 #    show()
-=======
-        plot (r, rho, label='Z = %g' % Z)
-        plot (r, rho_0 + rho_rpa, label='Z = %g, rpa' % Z)
-    legend()
-    show()
->>>>>>> 5a35562ad06105d4e8c8b30517cd2f661b7263ec
     
 
 if __name__ == '__main__':
