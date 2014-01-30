@@ -42,7 +42,7 @@ class RPA_tot:
        self.Q_inter = Kernel(rexp, Q_inter)
        Q_intra = np.zeros((len(r), len(r)))
        if (kF * r.max() > 0.01):
-           Q_intra = mkrpa2.RPA_intra(rexp, kF)
+           Q_intra = mkrpa2.RPA_intra(r, kF)
        self.Q_intra = Kernel(rexp, Q_intra)
        
     def __call__ (self, r, U): 
@@ -54,7 +54,7 @@ class RPA_m:
        self.Qm_inter = Kernel(rexp, Qm_inter)
        Qm_intra = np.zeros((len(r), len(r)))
        if (kF * r.max() > 0.01):
-           Qm_intra = rpam.kernel_m_intra(rexp, mlist, kF, '4') 
+           Qm_intra = rpam.kernel_m_intra(r, mlist, kF, '3') 
            #rpakernel.kernel_m_intra(r, mlist, kF)
        self.Qm_intra = Kernel(rexp, Qm_intra)
     def __call__ (self, r, U): 
