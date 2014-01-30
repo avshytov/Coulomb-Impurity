@@ -177,8 +177,8 @@ def do_kernel_m_inter(r, mvals):
         I5, eps5 = integrate.quad(f5, 0.0, r[0])
         I6, eps6 = integrate.quad(f6, 0.0, r[0])
         print I5, I6, I5 * r1 / dr, I6 / dr
-        #Q[i, 0] += (  I5*r2/dr - I6/dr) * r1 
-        #Q[i, 1] += ( -I5*r1/dr + I6/dr) * r2
+        Q[i, 0] += (  I5*r2/dr - I6/dr) * r1 
+        Q[i, 1] += ( -I5*r1/dr + I6/dr) * r2
     
         def f7(rhox):
             return Qs(ri, 1.0/rhox) / rhox**3
