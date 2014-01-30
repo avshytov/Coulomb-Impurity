@@ -43,7 +43,7 @@ class RPA_tot:
        Q_intra = np.zeros((len(r), len(r)))
        if (kF * r.max() > 0.01):
            Q_intra = mkrpa2.RPA_intra(r, kF)
-       self.Q_intra = Kernel(rexp, Q_intra)
+       self.Q_intra = Kernel(r, Q_intra)
        
     def __call__ (self, r, U): 
         return self.Q_inter(r, U) + self.Q_intra(r, U)
@@ -56,7 +56,7 @@ class RPA_m:
        if (kF * r.max() > 0.01):
            Qm_intra = rpam.kernel_m_intra(r, mlist, kF, '3') 
            #rpakernel.kernel_m_intra(r, mlist, kF)
-       self.Qm_intra = Kernel(rexp, Qm_intra)
+       self.Qm_intra = Kernel(r, Qm_intra)
     def __call__ (self, r, U): 
         return self.Qm_inter(r, U) + self.Qm_intra(r, U)
         
@@ -211,8 +211,8 @@ class GrapheneResponse:
 
 if __name__ == '__main__':
    rmin = 0.01
-   rmax = 50.0
-   N = 500
+   rmax = 20.0
+   N = 200
    r = util.make_lin_grid(rmin, rmax, N) 
    Ef = -0.2
    Ecut = -3.0
@@ -259,9 +259,9 @@ if __name__ == '__main__':
    rho_0 = (graphene.Emax**2 - graphene.Emin**2) / 4.0 / math.pi
    rho_1 = graphene.diracDensity(U)   
 
-   if True:
+   if False:
        imin = 0
-       r_stop = 25.0; 
+       r_stop = 12.0; 
        imax = np.abs(r - r_stop).argmin()
        rmin = r[0]
        rmax = r[-1]
