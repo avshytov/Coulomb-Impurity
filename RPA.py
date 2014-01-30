@@ -137,7 +137,7 @@ def Q_reg(r1, r2, eps):
 
 
 def Qs_spline(mvals):
-    xvals = arange (0.0000, 1.0001, 0.001)
+    xvals = arange (0.0001, 1.0001, 0.001)
     def Qmsum(x):
         s = 0.0
         for m in mvals:
