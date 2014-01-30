@@ -1,3 +1,16 @@
+using_c_code = False
+
+if using_c_code: 
+   import _rpam
+   def do_kernel_m_intra(r, mlist, kF):
+       return _rpam.kernel_m_intra(list(r), list(mlist), kF)
+                    
+else:
+   import rpakernel
+   def do_kernel_m_intra(r, mlist, kF):
+       return rpakernel.do_kernel_m_intra(r, mlist, kF)
+
+
 import _rpam
 import numpy as np
 from scipy import linalg
