@@ -90,8 +90,8 @@ if __name__ == '__main__':
    Nf = 4
    alpha = 1.0
    eps_th = 1.0 + 3.14159*alpha * Nf / 8
-   Uth = Z / np.sqrt(r**2 + r_0**2) / eps_th
-   rho_th = -Z * Nf * alpha / eps_th / np.sqrt(r**2 + r_0**2)**3 / 16
+   Uth = -Z / np.sqrt(r**2 + r_0**2) / eps_th
+   rho_th = Z * Nf * alpha / eps_th / np.sqrt(r**2 + r_0**2)**3 / 16
    plot(r, Uth - Uth[-1], label='Uth')
    legend()
    make_figure(datas, ['rho', 'rho1'], False)
