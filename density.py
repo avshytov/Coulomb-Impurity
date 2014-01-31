@@ -37,29 +37,33 @@ class Kernel:
         return interpolate.splev(r, Xs, der=0)
 
 class RPA_tot: 
-    def __init__ (self, r, rexp, kF):
-       Q_inter = mkrpa2.RPA_inter(rexp)
-       self.Q_inter = Kernel(rexp, Q_inter)
-       Q_intra = np.zeros((len(r), len(r)))
-       if (kF * r.max() > 0.01):
-           Q_intra = mkrpa2.RPA_intra(r, kF)
-       self.Q_intra = Kernel(r, Q_intra)
+    def __init__ (self, r_inter, r_intra, kF):
+       Q_inter = mkrpa2.RPA_inter(r_inter.r, r_inter.label)
+       self.Q_inter = Kernel(r_inter.r, Q_inter)
+       Q_intra = np.zeros((len(r_inter.r), len(r_inter.r)))
+       if (kF * r_intra.r.max() > 0.01):
+           Q_intra = mkrpa2.RPA_intra(r_intra.r, kF, r_intra.label)
+       self.Q_intra = Kernel(r_intra.r, Q_intra)
        
     def __call__ (self, r, U): 
         return self.Q_inter(r, U) + self.Q_intra(r, U)
     
 class RPA_m:
-    def __init__ (self, r, rexp, kF, mlist):
-       Qm_inter = rpakernel.kernel_m_inter(rexp, mlist)
-       self.Qm_inter = Kernel(rexp, Qm_inter)
-       Qm_intra = np.zeros((len(r), len(r)))
-       if (kF * r.max() > 0.01):
-           Qm_intra = rpam.kernel_m_intra(r, mlist, kF, '3') 
+    def __init__ (self, r_inter, r_intra, kF, mlist):
+       Qm_inter = rpakernel.kernel_m_inter(r_inter.r, mlist, r_inter.label)
+       self.Qm_inter = Kernel(r_inter.r, Qm_inter)
+       Qm_intra = np.zeros((len(r_intra.r), len(r_intra.r)))
+       if (kF * r_intra.r.max() > 0.01):
+           Qm_intra = rpam.kernel_m_intra(r_intra.r, mlist, kF, '3' + r_intra.label) 
            #rpakernel.kernel_m_intra(r, mlist, kF)
-       self.Qm_intra = Kernel(r, Qm_intra)
+       self.Qm_intra = Kernel(r_intra.r, Qm_intra)
     def __call__ (self, r, U): 
         return self.Qm_inter(r, U) + self.Qm_intra(r, U)
         
+class Grid:
+    def __init__ (self, r, label):
+        self.r = r
+        self.label = label
     
 class GrapheneResponse:
     def __init__ (self, r, Ef, **kwargs):
@@ -67,7 +71,9 @@ class GrapheneResponse:
            'Temp'   : 0.01, 
             'Ecut'  : -1.5, 
             'B'     : 0.0, 
-            'Mmax'  : 16
+            'Mmax'  : 16, 
+            'grid_intra' : 'lin', 
+            'grid_inter' : 'exp'
         }
         params.update(**kwargs)
         self.Emin = min(Ef, params['Ecut']) # Ecut could be both positive
@@ -78,13 +84,21 @@ class GrapheneResponse:
         self.B = params['B']
         self.mlist =  np.array(range(0, params['Mmax']))
         
+        grid_dict = {
+            'lin' : self.r, 
+            'exp' : self.rexp; 
+        }
+        
+        r_inter = Grid(grid_dict[grid_inter], grid_inter)
+        r_intra = Grid(grid_dict[grid_intra], grid_intra)
+        
         if False:  # Use this to skip kernel calculation; helpful in debugging
            self.Q_Emin = np.zeros((len (self.rexp), len(self.rexp)))#RPA_kernel(self.rexp, abs(self.Emin))
            self.Q_Emax = np.zeros(np.shape(self.Q_Emin)) #RPA_kernel(self.rexp, abs(self.Emax))
         else:
            # Full RPA kernel
-           self.Q_Emin  = RPA_tot(self.r, self.rexp, abs(self.Emin)) 
-           self.Q_Emax  = RPA_tot(self.r, self.rexp, abs(self.Emax)) 
+           self.Q_Emin  = RPA_tot(r_inter, r_intra, self.rexp, abs(self.Emin)) 
+           self.Q_Emax  = RPA_tot(r_inter, r_intra, self.rexp, abs(self.Emax)) 
            #Kernel(self.rexp, RPA_kernel(self.rexp, abs(self.Emin)))
            #self.Q_Emax  = Kernel(self.rexp, RPA_kernel(self.rexp, abs(self.Emax)))
            # m-resolved RPA kernel
@@ -92,8 +106,8 @@ class GrapheneResponse:
            self.Qm_Emax = self.Q_Emax; #np.zeros(np.shape(self.Q_Emin))#rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emax))
            self.Qm_Emin = self.Q_Emin; #np.zeros(np.shape(self.Q_Emax))#rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emin))
         else:
-           self.Qm_Emin = RPA_m(self.r, self.rexp, abs(self.Emin), self.mlist) 
-           self.Qm_Emax = RPA_m(self.r, self.rexp, abs(self.Emax), self.mlist) 
+           self.Qm_Emin = RPA_m(r_inter, r_intra, abs(self.Emin), self.mlist) 
+           self.Qm_Emax = RPA_m(r_inter, r_intra, abs(self.Emax), self.mlist) 
            #rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emax))
            #self.Qm_Emin = 
            #rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emin))
@@ -211,8 +225,8 @@ class GrapheneResponse:
 
 if __name__ == '__main__':
    rmin = 0.01
-   rmax = 20.0
-   N = 200
+   rmax = 50.0
+   N = 500
    r = util.make_lin_grid(rmin, rmax, N) 
    Ef = -0.2
    Ecut = -3.0
@@ -259,9 +273,9 @@ if __name__ == '__main__':
    rho_0 = (graphene.Emax**2 - graphene.Emin**2) / 4.0 / math.pi
    rho_1 = graphene.diracDensity(U)   
 
-   if False:
+   if True:
        imin = 0
-       r_stop = 12.0; 
+       r_stop = 25.0; 
        imax = np.abs(r - r_stop).argmin()
        rmin = r[0]
        rmax = r[-1]
