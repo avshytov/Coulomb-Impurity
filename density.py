@@ -86,7 +86,7 @@ class GrapheneResponse:
         
         grid_dict = {
             'lin' : self.r, 
-            'exp' : self.rexp; 
+            'exp' : self.rexp 
         }
         
         r_inter = Grid(grid_dict[grid_inter], grid_inter)
@@ -225,8 +225,8 @@ class GrapheneResponse:
 
 if __name__ == '__main__':
    rmin = 0.01
-   rmax = 50.0
-   N = 500
+   rmax = 10.0
+   N = 100
    r = util.make_lin_grid(rmin, rmax, N) 
    Ef = -0.2
    Ecut = -3.0
