@@ -1,4 +1,4 @@
-using_c_code = False
+using_c_code = True
 
 if using_c_code: 
    import _rpam
@@ -15,8 +15,8 @@ import _rpam
 import numpy as np
 from scipy import linalg
 
-def kernel_m_intra(r, mlist, kF, version='3'):
-    fname =  "data/rpa-m%s-Rmin=%g-Rmax=%g-N=%g-Mmax=%d-kF=%g.npz" % (version, r.min(), r.max(), len(r), mlist[-1], kF)
+def kernel_m_intra(r, mlist, kF, label='3'):
+    fname =  "data/rpa-m%s-Rmin=%g-Rmax=%g-N=%g-Mmax=%d-kF=%g.npz" % (label, r.min(), r.max(), len(r), mlist[-1], kF)
     try: 
         data = np.load(fname); 
         print "Loading RPA m-resolved intraband kernel from", fname

@@ -206,8 +206,8 @@ def do_kernel_m_inter(r, mvals):
         Q[i, -2] -= C2
     return Q
 
-def kernel_m_inter(r, mlist):
-    fname = "data/rpa-m-Rmin=%g-Rmax=%g-N=%g-Mmax=%d.npz" % (r.min(), r.max(), len(r), mlist[-1])
+def kernel_m_inter(r, mlist, label=''):
+    fname = "data/rpa-m-Rmin=%g-Rmax=%g-N=%g-Mmax=%d-%s.npz" % (r.min(), r.max(), len(r), mlist[-1], label)
     try:
         data = np.load(fname)
         print "Loading RPA m-resolved kernel from", fname
@@ -223,8 +223,8 @@ def kernel_m_inter(r, mlist):
         np.savez(fname, Qm=Qm, r=r, mlist=np.array(mlist))
         return Qm / math.pi**2
   
-def kernel_m_intra(r, mlist, kF):
-    fname = "data/rpa-m2-Rmin=%g-Rmax=%g-N=%g-Mmax=%d-kF=%g.npz" % (r.min(), r.max(), len(r), mlist[-1], kF)
+def kernel_m_intra(r, mlist, kF, label=''):
+    fname = "data/rpa-m2-Rmin=%g-Rmax=%g-N=%g-Mmax=%d-kF=%g-%s.npz" % (r.min(), r.max(), len(r), mlist[-1], kF, label)
     try:
         data = np.load(fname)
         print "Loading RPA m-resolved intraband kernel from", fname
@@ -240,8 +240,8 @@ def kernel_m_intra(r, mlist, kF):
         np.savez(fname, Q=Q, r=r, mlist=np.array(mlist))
         return Q
   
-def kernel_m (r, mlist, kF):
-    Q1 = kernel_m_inter(r, mlist)
+def kernel_m (r, mlist, kF, label=''):
+    Q1 = kernel_m_inter(r, mlist, label)
     if (kF * r.max() > 0.01):
-        Q1 += kernel_m_intra(r, mlist, kF)
+        Q1 += kernel_m_intra(r, mlist, kF, label)
     return Q1

@@ -345,9 +345,9 @@ def do_RPA_intra(r, kF):
            pylab.show()
     return - Q1 * 2.0 * math.pi
 
-def RPA_intra(r, kF):
+def RPA_intra(r, kF, label=''):
     
-    integrate_all = False
+    #integrate_all = False
     """
        Attempt to load the intraband kernel from file, 
        calculate if unavailable
@@ -355,7 +355,7 @@ def RPA_intra(r, kF):
     Rmin = r.min()
     Rmax = r.max()
     N = len(r)
-    fname = "data/rpakernel-intra-kF=%g-Rmin=%g-Rmax=%g-N=%d.dat.npz" % (kF, Rmin, Rmax, N)
+    fname = "data/rpakernel-intra-kF=%g-Rmin=%g-Rmax=%g-N=%d-%s.dat.npz" % (kF, Rmin, Rmax, N, label)
     try: 
         data = np.load(fname)
         print "Intraband kernel loaded from", fname
@@ -537,7 +537,7 @@ def do_RPA_inter(r):
         Q[i, -2] -= C2
     return Q
 
-def RPA_inter(r):
+def RPA_inter(r, label=''):
     """
        Attempt to load interband kernel from file, 
        recalculate if the data is not available
@@ -545,7 +545,7 @@ def RPA_inter(r):
     Rmin = r.min()
     Rmax = r.max()
     N = len(r)
-    fname = "data/rpakernel-inter-Rmin=%g-Rmax=%g-N=%g.dat.npz" % (Rmin, Rmax, N)
+    fname = "data/rpakernel-inter-Rmin=%g-Rmax=%g-N=%g-%s.dat.npz" % (Rmin, Rmax, N, label)
     try: 
         data = np.load(fname)
         print "Interband kernel loaded from", fname
