@@ -89,16 +89,16 @@ class GrapheneResponse:
             'exp' : self.rexp 
         }
         
-        r_inter = Grid(grid_dict[grid_inter], grid_inter)
-        r_intra = Grid(grid_dict[grid_intra], grid_intra)
+        r_inter = Grid(grid_dict[params['grid_inter']], params['grid_inter'])
+        r_intra = Grid(grid_dict[params['grid_intra']], params['grid_intra'])
         
         if False:  # Use this to skip kernel calculation; helpful in debugging
            self.Q_Emin = np.zeros((len (self.rexp), len(self.rexp)))#RPA_kernel(self.rexp, abs(self.Emin))
            self.Q_Emax = np.zeros(np.shape(self.Q_Emin)) #RPA_kernel(self.rexp, abs(self.Emax))
         else:
            # Full RPA kernel
-           self.Q_Emin  = RPA_tot(r_inter, r_intra, self.rexp, abs(self.Emin)) 
-           self.Q_Emax  = RPA_tot(r_inter, r_intra, self.rexp, abs(self.Emax)) 
+           self.Q_Emin  = RPA_tot(r_inter, r_intra, abs(self.Emin)) 
+           self.Q_Emax  = RPA_tot(r_inter, r_intra, abs(self.Emax)) 
            #Kernel(self.rexp, RPA_kernel(self.rexp, abs(self.Emin)))
            #self.Q_Emax  = Kernel(self.rexp, RPA_kernel(self.rexp, abs(self.Emax)))
            # m-resolved RPA kernel
