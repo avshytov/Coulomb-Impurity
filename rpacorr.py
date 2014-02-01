@@ -32,7 +32,7 @@ def do_corr_intra(r, kF):
         #
         for p in range(Npow + 1):
             def Fp(xi):
-                return Gfun(r[i], Rstar/xi) / xi**(3 - p)
+                return Gfun(r[i], Rstar/xi) / xi**(3 - p) * Rstar**2
             Ip, epsp = integrate.quad(Fp, ximin, 1.0, limit=10000)
             print Ip, epsp
             if False:
@@ -44,7 +44,7 @@ def do_corr_intra(r, kF):
                pl.show()
             Q1[i, p] = Ip
         print "intra-corr: ", i, Ip, epsp    
-    return - Q1 * 2.0 * math.pi * Rstar**2
+    return - Q1 * 2.0 * math.pi 
 
 def RPA_corr_intra(r, kF, label=''):
     
@@ -132,6 +132,9 @@ if __name__ == '__main__':
    Q_intra  = mkrpa2.RPA_intra(r, kF, 'exp')
    Q_inter_corr = RPA_corr_inter(r, 'exp')
    Q_intra_corr = RPA_corr_intra(r, kF, 'exp')
+   print "at 0: inter corr:", Q_inter_corr[0, :] * 2.0 * math.pi
+   print "at 0: intra corr:", Q_intra_corr[0, :] * 2.0 * math.pi 
+   print "sum(Q_intra) = ", sum(Q_intra[0, :]) * 2.0 * math.pi 
    r_0 = 1.0
    U = 1.0 / (r**2 + r_0**2)**0.5
    def Uq(q):
