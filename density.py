@@ -13,6 +13,7 @@ import mkrpa2
 import rpakernel
 import rpam
 import rpacorr
+import deltafunc
 from odedirac import (_sgn, odedos_m, doscalc, rhocalc) 
 
 #def backgroundDensity(r, mlist, Temp):
@@ -254,7 +255,7 @@ class GrapheneResponse:
         #rho[imax:] = rho_rpa[imax:]
         return rho 
 
-
+            
 if __name__ == '__main__':
    rmin = 0.01
    rmax = 50.0
@@ -268,24 +269,27 @@ if __name__ == '__main__':
    
    Z = 0.02
    r_0 = 1.0
-   U = Z / np.sqrt(r**2 + r_0**2)
+   #U = Z / np.sqrt(r**2 + r_0**2)
    #def Ur(rx):
    #    if rx > r_0: 
    #       return -Z/rx 
    #    return -Z / r_0
    #U = np.vectorize(Ur)(r)
-   def rho_b(rx):
-       #if rx > r_0: return 0.0; 
-       #return Z / math.pi / r_0**2
-       return r_0**2 / math.pi / (rx**2 + r_0**2)**2 * Z
-      
+   #def rho_b(rx):
+   #     #if rx > r_0: return 0.0; 
+   #     #return Z / math.pi / r_0**2
+   #     return r_0**2 / math.pi / (rx**2 + r_0**2)**2 * Z
+   delta_func = deltafunc.DeltaGauss(r_0)
+   #delta_func = deltafunc.DeltaCubic(r_0)
+   rho_bare = Z * delta_func.rho(r)
+   U = Z * delta_func.U(r)
    
    rexp = util.make_exp_grid(0.001, 50.0, 1000)
    Qcoul = Kernel(rexp, coulomb.kernel(rexp))
-   rho_bare = np.vectorize(rho_b)(r)
+   #rho_bare = np.vectorize(rho_b)(r)
    #U = Qcoul(r, rho_bare)
    #U[0:3] = U[3]
-   if False:
+   if True:
       import pylab as pl
       pl.plot (r, U)
       pl.plot (r, Z / np.sqrt(r**2 + r_0**2))
@@ -293,8 +297,8 @@ if __name__ == '__main__':
       pl.loglog(r, np.abs(U))
       pl.loglog(r, Z / np.sqrt(r**2 + r_0**2))
       pl.show ()
-   #rho_th = - math.pi / 8.0 * rho_bare
-   rho_th = -Z * r_0 / 16.0 / np.sqrt(r**2 + r_0**2)**3
+   rho_th = - math.pi / 8.0 * rho_bare
+   #rho_th = -Z * r_0 / 16.0 / np.sqrt(r**2 + r_0**2)**3
    
    rho_RPA = graphene.rho_RPA(U)
    rho_U   = graphene.rho_U(U)
@@ -314,7 +318,7 @@ if __name__ == '__main__':
        rmin = r[0]
        rmax = r[-1]
        dr = r[imin+1]-r[imin]
-       Ugrid = []
+       Zvals = []
        Qtots = []
        Qths = []
        print 'Total Charge Calculation: rmin=', rmin, 'rmax=', rmax
@@ -323,7 +327,7 @@ if __name__ == '__main__':
        for Z0 in np.linspace(-0.5, 0.5, 41):
        #for Z0 in [0.6, 0.8, 1.0, 1.2, 1.4]:
            print 'Calculating for Z0=',Z0 
-           Ugrid.append(Z0)
+           Zvals.append(Z0)
            Qtheory = (( r_0 / np.sqrt(r_0**2+rmin**2))
                       - (r_0/ np.sqrt(r_0**2 + rmax**2)))
            Qtheory *= Z0 * np.pi / 8.0
@@ -331,7 +335,8 @@ if __name__ == '__main__':
            Us = Z0 / Z * U
            rhotot = graphene.rho_U(Us)
            
-           rho_rpa = -Z0 / 16.0 * r_0 / np.sqrt(r**2 + r_0**2)**3
+           rho_rpa = rho_bare * (-math.pi/8.0)
+           #-Z0 / 16.0 * r_0 / np.sqrt(r**2 + r_0**2)**3
            
            
            Qsim = 0.5 * dr * rhotot[imin] * r[imin]
@@ -366,17 +371,17 @@ if __name__ == '__main__':
            Qtots.append(Qsim)
            Qths.append(Qtheory)
        f = open("Q-data.dat", 'w')
-       for i in range(len(Ugrid)):
-           f.write("%g\t%g\t%g\n" % (Ugrid[i], Qtots[i], Qths[i]))
+       for i in range(len(Zvals)):
+           f.write("%g\t%g\t%g\n" % (Zvals[i], Qtots[i], Qths[i]))
        f.close()
-       Ugrid = np.array(Ugrid)
+       Zvals = np.array(Zvals)
        Q_sim = np.array(Qtots)
        Q_linear = np.array(Qths)
-       Q_bs = (np.pi/8.0*Ugrid + 0.19*Ugrid**3)
+       Q_bs = (np.pi/8.0*Zvals + 0.19*Zvals**3)
        pl.figure()
-       pl.plot(Ugrid, Q_sim, label='sim')
-       pl.plot(Ugrid, Q_linear, label='Linear')
-       pl.plot(Ugrid, Q_bs, label='B-S')
+       pl.plot(Zvals, Q_sim, label='sim')
+       pl.plot(Zvals, Q_linear, label='Linear')
+       pl.plot(Zvals, Q_bs, label='B-S')
        pl.legend()
 
    import pylab as pl
