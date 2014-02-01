@@ -21,7 +21,7 @@ def do_corr_intra(r, kF):
     ximin = Rstar / Rmax; 
     print "ximin = ", ximin
     
-    for i in range (0, N):
+    for i in range (0, len(r)):
         ri = r[i]
         #
         # Integrate from r[-1] to infinity, 
@@ -59,13 +59,13 @@ def RPA_corr_intra(r, kF, label=''):
     fname = "data/rpakernel-intra-corr-kF=%g-Rmin=%g-Rmax=%g-N=%d-%s.dat.npz" % (kF, Rmin, Rmax, N, label)
     try: 
         data = np.load(fname)
-        print "Intraband kernel loaded from", fname
+        print "Intraband kernel correction loaded from", fname
         assert linalg.norm(r - data['r']) < 1e-6, "r grids are different"
         return data['Q']
     except:
         import traceback
         traceback.print_exc()
-        print "cannot load data from", fname, "; recalculating"
+        print "cannot load correction data from", fname, "; recalculating"
         Q = do_corr_intra(r, kF)
         np.savez(fname, r=r, Q=Q, kF=kF)
         return Q
@@ -81,7 +81,7 @@ def do_corr_inter(r):
     Npow = 3
     Q = np.zeros ((N, Npow + 1))
     Rstar = r[-1]
-    for i in range (0, N):
+    for i in range (0, len(r)):
         ri = r[i]
         #
         # Integrate from r[-1] to infinity, 
@@ -109,13 +109,13 @@ def RPA_corr_inter(r, label=''):
     fname = "data/rpakernel-inter-corr-Rmin=%g-Rmax=%g-N=%g-%s.dat.npz" % (Rmin, Rmax, N, label)
     try: 
         data = np.load(fname)
-        print "Interband kernel loaded from", fname
+        print "Interband kernel correction loaded from", fname
         assert linalg.norm(r - data['r']) < 1e-6, "r grids are different"
         return data['Q']
     except:
         import traceback
         traceback.print_exc()
-        print "cannot load data from", fname, "; recalculating"
+        print "cannot load correction data from", fname, "; recalculating"
         Q = do_corr_inter(r)
         np.savez(fname, r=r, Q=Q)
         return Q
