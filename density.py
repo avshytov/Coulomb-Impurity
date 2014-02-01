@@ -6,25 +6,13 @@ import coulomb
 import scipy
 from scipy import special
 from scipy import interpolate
-#from scipy.interpolate import splev, splrep
-from diracsolver import (makeDirac, solveDirac, dos_bg, diracLDOS, find_rho, getDensity,
-                         prepareLDOS, bandDensity)
 import mkrpa2
 import rpakernel
 import rpam
 import rpacorr
 import deltafunc
-from odedirac import (_sgn, odedos_m, doscalc, rhocalc) 
-
-#def backgroundDensity(r, mlist, Temp):
-#    rho_0 = bandDensity(r, 0.0 * r, mlist, BTemp)
-#    return rho_0
-    
-def RPA_kernel(r, kF):
-    Q_rpa = mkrpa2.RPA_inter(r) 
-    if (kF * r.max() > 0.01):
-        Q_rpa += mkrpa2.RPA_intra(r, kF)
-    return Q_rpa
+import odedirac
+from odedirac import (_sgn) 
 
 class Kernel:
     def __init__ (self, r, Q):
@@ -146,15 +134,8 @@ class GrapheneResponse:
         self.Q_corr = RPA_corr(r_inter, r_intra, abs(self.Emax), self.mlist)
         N = len(self.r)
           
-    if False:
-        def diracDensity(self, U):
-            return bandDensity(self.r, U, self.mlist, self.B, 
-                               self.Emin, self.Emax, self.Temp)
-    
-    if True:
-        def diracDensity(self, U):
-            return rhocalc(self.Emin, self.Emax, self.r, 
-                           U, self.mlist)
+    def diracDensity(self, U):
+        return odedirac.rhocalc(self.Emin, self.Emax, self.r, U, self.mlist)
                        
     def bandResponse(self, U):
         rho_b = self.diracDensity(U)
@@ -166,21 +147,16 @@ class GrapheneResponse:
         return util.gridswap(self.rexp, self.r, rho_exp)
     
     def rho_RPA(self, U):
-        return self.Q_Emax(self.r, U) #self.apply_kernel(self.Q_Emax, U)
+        return self.Q_Emax(self.r, U) 
     
     def rho_RPA_m(self, U):
         return self.Qm_Emax(self.r, U) - self.Qm_Emin(self.r, U)
-        #return self.apply_kernel(self.Qm_Emax - self.Qm_Emin, U)
     
     def highm(self, U): # Calculation of high-m correction within RPA
         r = self.r
         highm_max = - (self.Q_Emax(r, U) - self.Qm_Emax(r, U))
         highm_min = - (self.Q_Emin(r, U) - self.Qm_Emin(r, U))
         return highm_max - highm_min
-        #return - ( self.Q_Emax(r, U) - self.Qm_Emax(r, U) - self.Q_Emin(r, U) + self.Q
-        #Qmax =  self.Q_Emax - self.Qm_Emax
-        #Qmin =  self.Q_Emin - self.Qm_Emin
-        #return -self.apply_kernel(Qmax - Qmin, U)
         
     def highm_old(self, E, U): # old way to calculate high-m correction
         Mmax = self.mlist[-1]
@@ -232,15 +208,13 @@ class GrapheneResponse:
         sgnE = 1.0
         if (self.Emin < 0): sgnE = -1.0
         rho = np.zeros(np.shape(U))
-        rho = 0.0*self.highm(U) * sgnE + self.highm2(U) * (0.0)
+        #rho = self.highm(U) * sgnE + self.highm2(U) 
         #rho  = self.highm( self.Emax,  U)
         #rho -= self.highm( self.Emin,  U)
         
         #rho += 1.0*U**2 / 4.0 / np.pi * sgnE # Quadratic contribution
         rho += self.U2(self.Emin, U)
         
-        #rho += self.apply_kernel(self.Q_Emin, U) 
-        #rho += self.apply_kernel(self.Qm_Emin, U)
         rho += self.Qm_Emin(self.r, U)
         rho += self.Q_Emax(self.r, U) - self.Qm_Emax(self.r, U)
         return rho
