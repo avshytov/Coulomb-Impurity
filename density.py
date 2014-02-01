@@ -12,6 +12,7 @@ from diracsolver import (makeDirac, solveDirac, dos_bg, diracLDOS, find_rho, get
 import mkrpa2
 import rpakernel
 import rpam
+import rpacorr
 from odedirac import (_sgn, odedos_m, doscalc, rhocalc) 
 
 #def backgroundDensity(r, mlist, Temp):
@@ -60,6 +61,35 @@ class RPA_m:
     def __call__ (self, r, U): 
         return self.Qm_inter(r, U) + self.Qm_intra(r, U)
         
+class Correction:
+    def __init__ (self, r, Q):
+        self.r = r
+        self.Q = Q
+    def __call__ (self, r, U):
+        Us = interpolate.splrep(r, U)
+        Un = interpolate.splev(self.r, Us)
+        # Assume U(r) = U[-1] * r[-1]/r for now
+        # One can improve this approximation by including 
+        # further powers, (r[-1]/r)^2, etc., as well as 
+        # a constant term. 
+        Xn = self.Q[:, 1] * Un[-1]       
+        Xs = interpolate.splrep(self.r, Xn)
+        return interpolate.splev(r, Xs, der=0)
+        
+class RPA_corr: 
+    def __init__ (self, r_inter, r_intra, kF, mlist):
+        Q_inter = rpacorr.RPA_corr_inter(r_inter.r, r_inter.label)
+        if (kF * max(r_intra.r) > 0.01):
+            Q_intra = rpacorr.RPA_corr_intra(r_intra.r, kF, r_intra.label)
+        else:
+            Q_intra = np.zeros((len(r), len(Q_inter[0, :])))
+        self.C_inter = Correction(r_inter.r, Q_inter)
+        self.C_intra = Correction(r_intra.r, Q_intra)
+        
+    def __call__ (self, r, U):
+        return self.C_intra(r, U) + self.C_inter(r, U)
+    
+    
 class Grid:
     def __init__ (self, r, label):
         self.r = r
@@ -112,6 +142,7 @@ class GrapheneResponse:
            #self.Qm_Emin = 
            #rpakernel.kernel_m(self.rexp, self.mlist, abs(self.Emin))
         self.rho_0 = self.diracDensity(np.zeros(np.shape(r)))
+        self.Q_corr = RPA_corr(r_inter, r_intra, abs(self.Emax), self.mlist)
         N = len(self.r)
           
     if False:
@@ -216,23 +247,24 @@ class GrapheneResponse:
     def rho_U(self, U):    
         rho  = self.bandResponse(U)
         rho += self.seaContribution(U) 
-        Rmax = 45.0
-        imax = np.abs(self.r - Rmax).argmin()
-        rho_rpa = self.Q_Emax(self.r, U) #self.apply_kernel(self.Q_Emax, U)
-        rho[imax:] = rho_rpa[imax:]
+        rho += self.Q_corr(self.r, U) 
+        #Rmax = 45.0
+        #imax = np.abs(self.r - Rmax).argmin()
+        #rho_rpa = self.Q_Emax(self.r, U) #self.apply_kernel(self.Q_Emax, U)
+        #rho[imax:] = rho_rpa[imax:]
         return rho 
 
 
 if __name__ == '__main__':
    rmin = 0.01
-   rmax = 10.0
-   N = 100
+   rmax = 50.0
+   N = 500
    r = util.make_lin_grid(rmin, rmax, N) 
    Ef = -0.2
    Ecut = -3.0
    Mmax = 31
    #graphene = GrapheneResponse(r, -1e-4, Ecut=Ecut, Mmax=31)
-   graphene = GrapheneResponse(r, -1e-4, Ecut=Ecut, Mmax=Mmax)
+   graphene = GrapheneResponse(r, -1e-4, Ecut=Ecut, Mmax=Mmax, grid_intra='lin')
    
    Z = 0.02
    r_0 = 1.0
@@ -253,19 +285,21 @@ if __name__ == '__main__':
    rho_bare = np.vectorize(rho_b)(r)
    #U = Qcoul(r, rho_bare)
    #U[0:3] = U[3]
-   import pylab as pl
-   pl.plot (r, U)
-   pl.plot (r, Z / np.sqrt(r**2 + r_0**2))
-   pl.figure()
-   pl.loglog(r, np.abs(U))
-   pl.loglog(r, Z / np.sqrt(r**2 + r_0**2))
-   pl.show ()
+   if False:
+      import pylab as pl
+      pl.plot (r, U)
+      pl.plot (r, Z / np.sqrt(r**2 + r_0**2))
+      pl.figure()
+      pl.loglog(r, np.abs(U))
+      pl.loglog(r, Z / np.sqrt(r**2 + r_0**2))
+      pl.show ()
    #rho_th = - math.pi / 8.0 * rho_bare
    rho_th = -Z * r_0 / 16.0 / np.sqrt(r**2 + r_0**2)**3
    
    rho_RPA = graphene.rho_RPA(U)
    rho_U   = graphene.rho_U(U)
    rho_Ub  = graphene.bandResponse(U) 
+   rho_c = graphene.Q_corr(r, U)
    rho_RPAb = graphene.Q_Emax(r, U) - graphene.Q_Emin(r, U)
    rho_RPAbm = graphene.Qm_Emax(r, U) - graphene.Qm_Emin(r, U)
    #rho_RPAb = graphene.apply_kernel(graphene.Q_Emax - graphene.Q_Emin, U)
@@ -275,7 +309,7 @@ if __name__ == '__main__':
 
    if True:
        imin = 0
-       r_stop = 25.0; 
+       r_stop = 50.0; 
        imax = np.abs(r - r_stop).argmin()
        rmin = r[0]
        rmax = r[-1]
@@ -357,6 +391,7 @@ if __name__ == '__main__':
    pl.plot(r, rho_RPAb, label='RPA response (band)')
    pl.plot(r, rho_RPAbm, label='RPA response (band-m)')
    pl.plot(r, rho_U,   label='response from sim')
+   pl.plot(r, rho_c,   label='correction from r->inf')
    pl.plot(r, rho_Ub,   label='response from sim (band)')
    pl.plot(r, rho_th,  label='expected')
    pl.plot(r, rho_Ub - rho_RPAbm, label='rho_Ub - rho_RPA_b(m)')
@@ -367,6 +402,7 @@ if __name__ == '__main__':
    pl.loglog(r, np.abs(rho_RPA), label='RPA response (full)')
    pl.loglog(r, np.abs(rho_RPAb), label='RPA response (band)')
    pl.loglog(r, np.abs(rho_U),   label='response from sim')
+   pl.loglog(r, np.abs(rho_c),   label='correction from r->inf')
    pl.loglog(r, np.abs(rho_Ub),   label='response from sim (band)')
    pl.loglog(r, np.abs(rho_th),  label='expected')
    pl.legend()
