@@ -34,7 +34,16 @@ def do_corr_intra(r, kF):
             def Fp(xi):
                 return Gfun(r[i], Rstar/xi) / xi**(3 - p) * Rstar**2
             Ip, epsp = integrate.quad(Fp, ximin, 1.0, limit=10000)
-            print Ip, epsp
+            #
+            # We have to stop the integration at ximin: there are no data 
+            # points in the spline at lower values. 
+            #
+            # The integral from 0 to ximin can be found by approximating
+            # G as 1/(32*pi*r^3). (The oscillating term gives a quantity
+            # which smaller by a factor of 1/(kF*r). )
+            #
+            Imin = ximin**(p + 1.0) / (p + 1.0) / 32.0 / np.pi / Rstar
+            print Ip, epsp, Imin
             if False:
                xivals = np.arange(ximin, 1.0, 1e-4)
                fvals = np.vectorize(Fp)(xivals)
@@ -42,7 +51,7 @@ def do_corr_intra(r, kF):
                pl.loglog(xivals, np.abs(fvals))
                pl.title('r = %g p = %g' % (ri, p))
                pl.show()
-            Q1[i, p] = Ip
+            Q1[i, p] = Ip + Imin
         print "intra-corr: ", i, Ip, epsp    
     return - Q1 * 2.0 * math.pi 
 
