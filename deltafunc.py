@@ -2,7 +2,15 @@ import math
 import numpy as np
 from scipy import special
 
+#
+# The purpose of this module is to provide standard approximations for 
+# impurity charge distributions. 
+#
+
 class DeltaCubic:
+    #
+    # This is a very broad charge distributon, decaying as 1/r^3
+    #
     def __init__ (self, r_0):
         self.r_0 = r_0
         
@@ -12,6 +20,9 @@ class DeltaCubic:
         return 1.0 / np.sqrt(r**2 + self.r_0**2)
     
 class DeltaGauss:
+    #
+    # Narrow charge distribution
+    #
     def __init__ (self, r_0):
         self.r_0 = r_0
     def rho(self, r):
