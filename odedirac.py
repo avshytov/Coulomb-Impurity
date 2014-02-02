@@ -13,21 +13,23 @@ def _sgn(x):
 
 sgn = np.vectorize(_sgn)
 
+def psireg(r_i, Ex, m): ### Not normalised here
+    uu = special.jn(m, (np.abs(Ex)*r_i)) 
+    ud = special.jn(m+1, (np.abs(Ex)*r_i)) * sgn(Ex)
+    return uu, ud
+    
+def psising(r_i, Ex, m): ### Not normalised here
+    vu = special.yn(m, (np.abs(Ex)*r_i))
+    vd = sgn(Ex) * special.yn(m+1, (np.abs(Ex)*r_i))
+    return vu, vd
+
+
 def odedos_m(E,r,U,m):
 
-    def psireg(r_i, Ex): ### Not normalised here
-        uu = special.jn(m, (np.abs(Ex)*r_i)) 
-        ud = special.jn(m+1, (np.abs(Ex)*r_i)) * sgn(Ex)
-        return uu, ud
-    def psising(r_i, Ex): ### Not normalised here
-        vu = special.yn(m, (np.abs(Ex)*r_i))
-        vd = sgn(Ex) * special.yn(m+1, (np.abs(Ex)*r_i))
-        return vu, vd
-    
     chi_u = np.zeros((len(r), len(E)))
     chi_d = np.zeros(np.shape(chi_u))
 
-    chi_u[0, :], chi_d[0, :] = psireg(r[0], E - U[0])
+    chi_u[0, :], chi_d[0, :] = psireg(r[0], E - U[0], m)
 
     nchi = np.abs(chi_u[0, :]) + np.abs(chi_d[0, :]) # this does not involve
                                                      # squares of small numbers
@@ -106,8 +108,8 @@ def odedos_m(E,r,U,m):
 
         chi_u[i, :], chi_d[i, :] = chi_un, chi_dn
 
-    uu, ud = psireg(r[-1], E)
-    vu, vd = psising(r[-1], E)
+    uu, ud = psireg(r[-1], E, m)
+    vu, vd = psising(r[-1], E, m)
     D = uu * vd - vu * ud
     A = (chi_u[-1, :] * vd - chi_d[-1, :] * vu) / D
     B = (chi_d[-1, :] * uu - chi_u[-1, :] * ud) / D
