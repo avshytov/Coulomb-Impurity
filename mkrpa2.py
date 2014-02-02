@@ -29,6 +29,11 @@ def Pi_intra2 (q):
 
 
 def Pi_intra3(q):
+    """
+       Pi_intra with asymptotic behaviour, 2/3q^2 + 2/5/q^4 subtracted. 
+       I have changed 1/q^2 to 1/(q^2 + 1), because (a) it is finite 
+       at q=0, and (b)the integra for the latter can be easily computed
+    """
     return Pi_intra(q) - 2.0/3.0/(q**2 + 1.0) - 2.0/5.0/(q**2 + 1.0)**2
 
 def show_pi():
@@ -46,7 +51,11 @@ def show_pi():
    pylab.legend()
    pylab.show()
 
-
+   
+#
+# This is a rather naive approximation for Q_intra. It should, however, 
+# match G2_intra below. It only takes longer to calculate.
+#
 def F_intra2(r1, r2, kF):
     #print r1, r2, kF
     """
@@ -80,14 +89,29 @@ def F_intra2(r1, r2, kF):
     #print "In F2: ", I, I2
     return (I + I2) * kF**3 / (4.0 * math.pi**2)
 
+#
+# Asymptotic behavior of G2_intra below
+#
 def G2_intra_asympt(kF, r):
     C = 1.0 / 32.0 / np.pi / r**3
     xi = 2.0 * kF * r
-    # Coefficients checked by matching this with exact calculation
-    # TODO: this does not fully match analytical calculation, 
-    # due to 5/4 instead of 1. WHY?
+    # This expression found from the exact calculation.
+    # One has to keep in mind that there are two singularities 
+    # contributing to long-distance behaviour: at q = 2kF and
+    # at q = 0. The latter, of course, matches the one in Q_intra.
+    # I have verified the coefficients by comparing this asymptotics
+    # against the exact calculation. The asymptotics seem to match
+    # the function at k_F r > 10, or even 5. Below, it is applied at
+    # kF * r > 15. 
     u = 1.0 - 4.0 / math.pi * math.cos(xi) - 2.0 / math.pi * math.sin(xi) / xi
     return C * u
+
+#
+# Intraband contribution to the rpa kernel as a function of |r - r'|. 
+# It is given as Pi(q) - q/16. However, this expression decays slowly 
+# at q ->inf, as only 1/q, which results in poorly convergent integrals. 
+# We improve this by subtracting 2/3/(q^2 + k_F^2) and 2/5/(q^2 + k_F^2).
+#
 
 def G2_intra(r, kF): # xi == kF * r
     if (kF * r > 15.0):
@@ -107,6 +131,9 @@ def G2_intra(r, kF): # xi == kF * r
         J1 = special.jn(0, x * kF * r / s)
         return Pi_intra3(x / s) * J1 * x / s**2
     #print r1, r2
+    #
+    # We shall split the integration domain
+    #
     split_points = [0.0, 2.0, 3.0]
     split_points.sort()
     split_points.append(np.Inf)
@@ -124,15 +151,7 @@ def G2_intra(r, kF): # xi == kF * r
         I += Ii
         print Ii, epsi, a, b, nmax
         eps += epsi
-    #Ii, epsi =     
-    #xab = np.array([4.0 * s, 20.0 * s / kF / r])
-    #xa = min(xab)
-    #xb = max(xab)
-    #I1a, eps1a = integrate.quad(f, 0.0, xa,    limit=500)
-    #I1b, eps1b = integrate.quad(f, xa, xb,    limit=500)
-    #I1c, eps1c = integrate.quad(f, xb, np.Inf, limit=200)
-    
-    #I = I1a + I1b + I1c
+
     #
     # Now add the missing contribution:
     #   The integral for 1/(q^2 + 1) can be found as 
@@ -140,10 +159,6 @@ def G2_intra(r, kF): # xi == kF * r
     #   With two Bessel functions, we can apply addition theorem, 
     #   which gives K_0(|r - r'|), averaged over angles
     #
-    #def f2(theta):
-    #    r = math.sqrt(r1**2 + r2**2 + 2 * r1 * r2 * math.cos(theta))
-    #    return special.kn(0, kF * r)
-    #I2, eps2 = integrate.quad(f2, 0.0, math.pi)
     I2 = special.kn(0, kF * r)
     I2 *=  2.0 / 3.0 
     I3 = special.kn(1, kF * r) * kF * r / 2.0
@@ -152,6 +167,10 @@ def G2_intra(r, kF): # xi == kF * r
     #print "In G2: ", I, I2
     return (I + I2 + I3) * kF**3 / (4.0 * math.pi**2)
 
+#
+# Another, even more naive approximation. Should match F2_intra and G2_intra, 
+# though. 
+# 
 def F_intra(r1, r2, kF):
     """
         Integration routine --- for internal use in Q_intra
@@ -169,7 +188,16 @@ def F_intra(r1, r2, kF):
     #print "In F1:", I
     return (I + I2) * kF**3 / (4.0 * math.pi**2)
 
-    
+
+#
+# m-unresolved rpa contribution can be found from integrating
+# Pi(q) - q/16.0. This gives a function of r - r', which is given by G2_intra 
+# To get the intraband kernel contribution, 
+# one has to average this quantity over angles between r and r'.
+# To avoid multiple calls to the integration routine, we first 
+# tabulate Q(r-r') as a aspline, and then integrate this spline. 
+# This routine returns the function that does the integration.
+#
     
 def mk_intra_spline(kF, rmax):
     xvals = np.arange(1e-5, max(kF*rmax, 1.0), 5e-2)
@@ -221,6 +249,11 @@ def testF(r1, r2, kF):
     print "F1 = ", F1, "F2 = ", F2, "diff = ", F1 - F2, "rel: ", (F1 - F2)/(F1 + F2)*0.5
     print "G = ", G, "diff = ", G - F1, "rel:", (G - F1)/(G + F1) * 0.5
 
+
+#
+# Quick numerical quadrature routine.
+# The weights below are found from Gauss-Legendre algorithm.
+#
 def quick_quad(F, r1, r2, nj):
     s0 = 0.0; 
     s1 = 0.0; 
@@ -269,7 +302,11 @@ def quick_quad(F, r1, r2, nj):
                                                              
 def do_RPA_intra(r, kF):
     """
-       Calculate the intraband kernel
+       Calculate the intraband kernel contribution, which is defined
+       in Fourier space as
+       
+          Pi(q) - q/16.0
+       
     """
     Q1 = np.zeros((len(r), len(r)))
     dr = np.zeros((len(r)))
@@ -278,18 +315,13 @@ def do_RPA_intra(r, kF):
     #if True: 
     #   pylab.figure()
     integrate_all = False
-    dr0 = min(0.2/kF, 0.2)
+    dr0 = min(0.2/kF, 0.2) # minimal r-step in integration
     Gfun = mk_intra_spline(kF, max(r) * 2.0)
     for i in range(len(r)):
         print "Qintra:", i
         def Fi(rx):
             return rx * Gfun(r[i], rx)
         for j in range(0, len(r) - 1):
-            #if i == j: continue
-           # if (j  == len(r) - 1):
-           #     r1 = r[-2]
-           #     r2 = r[-1]
-           # else:
             r1 = r[j]
             r2 = r[j + 1]
             rc = (r1 + r2) / 2.0
@@ -297,47 +329,49 @@ def do_RPA_intra(r, kF):
             #print r1, r2
             
             nj = int (dr / dr0) + 1
-            if False:
+            
+            if False: # old algorithm, no longer in use
                #print r[j], nj, dr, dr0, dr/dr0
                Fk = np.zeros((nj,))
                xk = np.linspace(r1, r2, nj + 2)[1:-1]
-               #Fk = np.zeros ((nj + 3,))
-               #xk = np.linspace(r1, r2, nj + 3)
                for k in range(nj):
                    Fk[k] = Gfun(r[i], xk[k]) * xk[k]
-                   #Fk[k] = F_intra2(r[i], xk[k], kF) * xk[k]  
                dxk = dr / nj
             
                I1 = sum(Fk) * dxk
                I2 = sum(Fk * (xk - rc)) * dxk
             else:
                I1, I2 = quick_quad(Fi, r1, r2, nj)   
+               
             Q1[i, j]     += 0.5 * I1 - I2 / dr
             Q1[i, j + 1] += 0.5 * I1 + I2 / dr            
-            if False: #integrate_all:
+            if False: #integrate_all: # Exact integration
+               #
+               # If we approximate the integrand by a linear function, 
+               # all we need are given by the two contributions below. 
+               # 
                def G1(x):
                    #print "G1:", r[i], x, kF
                    return F_intra2(r[i], x, kF) * x
                def G2(x):
                    #print "G2:", r[i], x, kF
                    return F_intra2(r[i], x, kF) * x * (x - rc)
+               #
+               # approximate U = A + B * (r - rc), 
+               # A and B can be found from the values of U at r1 and r2. 
+               #
                I1, eps1 = integrate.quad(G1, r1, r2)
                I2, eps2 = integrate.quad(G2, r1, r2)
-               #if (j == len(r) - 1):
-               #    
-               #else:
                Q1[i, j]     += 0.5 * I1 - I2 / dr
                Q1[i, j + 1] += 0.5 * I1 + I2 / dr
-            #else: if False:
-            #   Fij = F_intra2(r[i], rc, kF)
-            #   Q1[i, j]     += 0.5 * Fij * r[j] * dr
-            #   Q1[i, j + 1] += 0.5 * Fij * r[j] * dr
-            #Fij = F_intra2(r[i], r[j], kF)
-            #Q1[i, j] = Fij * r[j] * dr[j]
-            #Q1[j, i] = Fij * r[i] * dr[i]
+        # Endpoint contribution
         Q1[i, 0] += F_intra2(r[i], 0.0, kF)* r[0]**2 / 2.0
         
-        print "sum: ", sum(Q1[i, :]) * 4.0 * math.pi**2 # must be one
+        # The sum of Q1 is the reaction to a constant potential, so it
+        # must give kF /2.0 /pi. In practice, due to r>r[-1] contribution, 
+        # it is slightly less. When the correction from rpacorr is added, 
+        # the sum approximates the theoretical value significantly better.
+        print "sum: ", sum(Q1[i, :]) * 4.0 * math.pi**2 # must be kF
         if False and i % 20 == 0:
            import pylab
            pylab.figure()
@@ -375,6 +409,19 @@ def F_inter(r1, r2, eps):
     """
        Calculate the interband kernel
     """
+    #
+    # The kernel has a 1/r^3 singularity which must be regularised so that
+    #  1. response to a constant potential is zero
+    #  2. response to a 1/r potential is zero. 
+    #  
+    # The Fourier transform of this kernel is 1/16 q, we regularise it as
+    # 
+    # 1/16.0 q exp(-q*epsilon). This gives 
+    #    
+    #    Q(r-r') = 1.0/(32 pi r^3) (1 - 3 epsilon^2/r^2). 
+    #
+    #  We then average this expression over angles. 
+    #
     C_eps = 3.0; # was 3.0
     epsr = eps * math.sqrt(r1 * r2); 
     def f(theta):
@@ -526,13 +573,29 @@ def do_RPA_inter(r):
         #for j in range(0, len(r)):
         #    ff.write("%d %g\n" % (j, Q[i, j]))
         #ff.close()
+        
+        #
+        # This kernel must annihilate U = const and U = const/r. 
+        # This is achieved via the singularity at r = r'. We simulate
+        # the effect of this singularity by modifying the value at r=r'
+        # to achieve this for U=1/r, and then check if it is correct 
+        # for U = const
+        #
+        
         s0 = np.dot(Q[i, :], 1.0/r)
         s2 = np.dot(Q[i, :], r/r)
         Q[i, i] -= r[i] * s0  
         #Q[i, i] += rho0[i] / u0[i] - np.dot(Q[i, :], u0) / u0[i]; 
         s = np.dot(Q[i, :], 1.0/r)
         s1 = np.dot(Q[i, :], r/r)
-        print "s: ", s, s1, s0, s2
+        print "s: ", s, s1, s0, s2\
+        #
+        # We define this kernel without including the correction coming
+        # from U > r[-1]. (This is accounted for by the correction 
+        # described in rpacorr.py) However, we need to include this correction
+        # when we attempt to determine the value of Q at r=r'. For this reason, 
+        # we first add the endpoint correction, and then subtract it again
+        # 
         Q[i, -1] -= C1
         Q[i, -2] -= C2
     return Q
