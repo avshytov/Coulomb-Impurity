@@ -1,9 +1,8 @@
-from pylab import * 
-from numpy import * 
+import numpy as np
+import math
 from scipy import special
 from scipy import linalg
 from scipy import integrate
-from scipy import interpolate
 import RPA
 
 #
@@ -31,7 +30,7 @@ def charge(rho, r):
 #
 def do_kernel(r):  
     N = len(r)
-    K = zeros ((N, N))
+    K = np.zeros ((N, N))
     
     for i in range (0, N):
         ri = r[i]
