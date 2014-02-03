@@ -13,21 +13,30 @@ def _sgn(x):
 
 sgn = np.vectorize(_sgn)
 
-def odedos_m(E,r,U,m):
+def psireg(r_i, Ex, m): ### Not normalised here                                          
+    uu = special.jn(m, (np.abs(Ex)*r_i))
+    ud = special.jn(m+1, (np.abs(Ex)*r_i)) * sgn(Ex)
+    return uu, ud
 
-    def psireg(r_i, Ex): ### Not normalised here
-        uu = special.jn(m, (np.abs(Ex)*r_i)) 
-        ud = special.jn(m+1, (np.abs(Ex)*r_i)) * sgn(Ex)
-        return uu, ud
-    def psising(r_i, Ex): ### Not normalised here
-        vu = special.yn(m, (np.abs(Ex)*r_i))
-        vd = sgn(Ex) * special.yn(m+1, (np.abs(Ex)*r_i))
-        return vu, vd
+def psising(r_i, Ex, m): ### Not normalised here                                         
+    vu = special.yn(m, (np.abs(Ex)*r_i))
+    vd = sgn(Ex) * special.yn(m+1, (np.abs(Ex)*r_i))
+    return vu, vd
+
+def odechi_m(E, r, U, m):
+    #def psireg(r_i, Ex): ### Not normalised here
+    #    uu = special.jn(m, (np.abs(Ex)*r_i)) 
+    #    ud = special.jn(m+1, (np.abs(Ex)*r_i)) * sgn(Ex)
+    #    return uu, ud
+    #def psising(r_i, Ex): ### Not normalised here
+    #    vu = special.yn(m, (np.abs(Ex)*r_i))
+    #    vd = sgn(Ex) * special.yn(m+1, (np.abs(Ex)*r_i))
+    #    return vu, vd
     
     chi_u = np.zeros((len(r), len(E)))
     chi_d = np.zeros(np.shape(chi_u))
 
-    chi_u[0, :], chi_d[0, :] = psireg(r[0], E - U[0])
+    chi_u[0, :], chi_d[0, :] = psireg(r[0], E - U[0], m)
 
     nchi = np.abs(chi_u[0, :]) + np.abs(chi_d[0, :]) # this does not involve
                                                      # squares of small numbers
@@ -106,23 +115,31 @@ def odedos_m(E,r,U,m):
 
         chi_u[i, :], chi_d[i, :] = chi_un, chi_dn
 
-    uu, ud = psireg(r[-1], E)
-    vu, vd = psising(r[-1], E)
+    return chi_u, chi_d
+
+def odedos_m(E, r, m, chi_u, chi_d):
+    if m >= 0:
+        mu = m
+    else:
+        mu = -m-1
+    uu, ud = psireg(r[-1], E, m)
+    vu, vd = psising(r[-1], E, m)
     D = uu * vd - vu * ud
     A = (chi_u[-1, :] * vd - chi_d[-1, :] * vu) / D
     B = (chi_d[-1, :] * uu - chi_u[-1, :] * ud) / D
-    
-    dos_m = ((r/r[-1])**(2*mu) * (np.abs(chi_u)**2 + np.abs(chi_d)**2).transpose()).transpose() 
+    dos_m = ((r/r[-1])**(2*mu) * (np.abs(chi_u)**2 + np.abs(chi_d)**2).transpose()).transpose()
     dos_m *= np.abs(E) / 4.0 / np.pi / (A**2 + B**2)
-#rhomatch = A**2 * (abs(uu)**2+abs(ud)**2) + B**2 * (abs(vu)**2+abs(vd)**2)
-    
+   #rhomatch = A**2 * (abs(uu)**2+abs(ud)**2) + B**2 * (abs(vu)**2+abs(v\d)**2)
+
     return dos_m
+
 
 def doscalc(E,r,U,mlist):
     dos_tot = np.zeros((len(r), len(E)))
     for m in mlist:
         print m, E[0,], E[-1]
-        dosm = odedos_m(E,r,U,m)
+        chi_um, chi_dm = odechi_m(E,r,U,m)
+        dosm = odedos_m(E,r,m,chi_um,chi_dm)
         dos_tot += dosm
     return 2.0 * dos_tot # We assume only m>=0 are included
 
@@ -168,22 +185,23 @@ def plotode(Emax, mlist):
 
 
 def test_rho():
+    import pylab as pl
     Emin = -1.0
     Emax = -1e-4
     mlist = np.arange(0, 10.0, 1.0)
     r_0 = 1.0
     r = np.linspace(0.1, 50.0, 500)
-#    figure()
+    pl.figure()
  
     for Z in [0.0, 0.1, 0.2, 0.3]:
         U = - Z / np.sqrt(r**2 + r_0**2)
         rho_0 = - (Emax**2 - Emin**2) / 4.0 / math.pi
         rho_rpa = -Z / 16.0 * r_0 / np.sqrt(r**2 + r_0**2)**3
         rho = rhocalc(Emin, Emax, r, U, mlist)
-#        plot (r, rho, label='Z = %g' % Z)
-#        plot (r, rho_0 + rho_rpa, label='Z = %g, rpa' % Z)
-#    legend()
-#    show()
+        pl.plot (r, rho, label='Z = %g' % Z)
+        pl.plot (r, rho_0 + rho_rpa, label='Z = %g, rpa' % Z)
+    pl.legend()
+    pl.show()
     
 
 if __name__ == '__main__':
