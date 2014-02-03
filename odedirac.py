@@ -13,19 +13,34 @@ def _sgn(x):
 
 sgn = np.vectorize(_sgn)
 
-def psireg(r_i, Ex, m): ### Not normalised here
-    uu = special.jn(m, (np.abs(Ex)*r_i)) 
+def psireg(r_i, Ex, m): ### Not normalised here                                          
+    uu = special.jn(m, (np.abs(Ex)*r_i))
     ud = special.jn(m+1, (np.abs(Ex)*r_i)) * sgn(Ex)
     return uu, ud
-    
-def psising(r_i, Ex, m): ### Not normalised here
+
+def psising(r_i, Ex, m): ### Not normalised here                                         
     vu = special.yn(m, (np.abs(Ex)*r_i))
     vd = sgn(Ex) * special.yn(m+1, (np.abs(Ex)*r_i))
     return vu, vd
 
 
-def odedos_m(E,r,U,m):
+#
+# We write the wave function as
+#
+#  psi_u =   (r/R)^mu chi_u
+#  psi_d = i (r/R)^mu chi_d
+#
+#  where mu = m for m >= 0, and -m-1 otherwise. R == r[-1] here
+#  This way, we can start with finite solution at r=0 and integrate
+#  it to r = R. After that, we match it to wave function of free particle:
+#  
+#   psi = A * psi_reg(E, r, m) + B * psi_sing(E, r, m)
+#
+#  We then normalise the wave function to unit intensity: A^2 + B^2 = 1. 
+#
 
+def odepsi_m(E, r, U, m):
+    
     chi_u = np.zeros((len(r), len(E)))
     chi_d = np.zeros(np.shape(chi_u))
 
@@ -38,24 +53,6 @@ def odedos_m(E,r,U,m):
     chi_u[0, :] /= nchi
     chi_d[0, :] /= nchi
 
-    if False:
-        #### Bessel summation normalisation ####
-        xi = (E - U[0]) * r[0]                  
-        if m >= 0: 
-            chi_u[0, :] = 1.0
-            chi_d[0, :] = (xi / 2.0) / (m + 1.0)
-        else:
-            chi_u[0, :] = - (xi / 2.0) / m # CHECK!!! 
-            chi_d[0, :] = 1.0
-    
-    #print "chi_u = ", chi_u[0, :]
-    #print "chi_d = ", chi_d[0, :]
-    #from pylab import plot, show, legend
-    #plot (chi_u[0, :] - 1.0, label='chi_u')
-    #plot (chi_d[0, :], label='chi_d')
-    #legend()
-    #show()
-
     if m >= 0:
         Ku = 0
         Kd = -1.0 - 2.0 * m
@@ -64,6 +61,11 @@ def odedos_m(E,r,U,m):
         mu = -m-1
         Ku = 1.0 + 2.0 * m
         Kd = 0
+        
+    #
+    #  Right-hand side of the ODE: chi'(r) = rhs(r)
+    #
+        
     def rhs(chi_u, chi_d, r, U):
         f_u = Ku / r * chi_u - (E - U)*chi_d
         f_d = (E - U)*chi_u  + Kd / r * chi_d
@@ -71,6 +73,10 @@ def odedos_m(E,r,U,m):
         #f_d = (E - U)*chi_u - (1 + mu + m)/r * chi_d
         return f_u,f_d
     Us = interpolate.splrep(r, U)
+    
+    #
+    # RK4 fourth order method
+    #
     def rk4step(chi_u, chi_d, r_p, r_n, h):
         r1 = r_p
         r2 = r_p + 0.5 * h
@@ -98,33 +104,50 @@ def odedos_m(E,r,U,m):
         chi_un, chi_dn = chi_u[i-1, :], chi_d[i-1, :]
         h = r[i] - r[i-1]
         dxi = max(abs(E)) * h
+        # dxi is the phase change over this grid step
+        # We split the step into smaller sub-steps if dxi 
+        # is too large
         dxi0 = 0.1
         n_steps = int(dxi / dxi0) + 1
         dr = h / n_steps
+        # Go over sub-steps
         for i_step in range(n_steps):
             r_p = r[i-1] + i_step * dr
             r_n = r[i-1] + (i_step + 1) * dr
             chi_un, chi_dn = rk4step(chi_un, chi_dn, r_p, r_n, dr)
 
         chi_u[i, :], chi_d[i, :] = chi_un, chi_dn
-
     uu, ud = psireg(r[-1], E, m)
     vu, vd = psising(r[-1], E, m)
     D = uu * vd - vu * ud
     A = (chi_u[-1, :] * vd - chi_d[-1, :] * vu) / D
     B = (chi_d[-1, :] * uu - chi_u[-1, :] * ud) / D
-    
-    dos_m = ((r/r[-1])**(2*mu) * (np.abs(chi_u)**2 + np.abs(chi_d)**2).transpose()).transpose() 
-    dos_m *= np.abs(E) / 4.0 / np.pi / (A**2 + B**2)
-#rhomatch = A**2 * (abs(uu)**2+abs(ud)**2) + B**2 * (abs(vu)**2+abs(vd)**2)
-    
-    return dos_m
+    r_mu =  (r/r[-1])**(mu)
+    #
+    # The goal of the crazy expression below is to multiply
+    # chi by the corresponding values of r^mu. In numpy, multiplying
+    # a matrix chi(r, E) by vector r would not work: we have to 
+    # transpose the matrix first. 
+    #
+    psi_u =  (r_mu * chi_u.transpose()).transpose()
+    psi_d =  (r_mu * chi_d.transpose()).transpose()
+    psi_u /= np.sqrt(A**2 + B**2)
+    psi_d /= np.sqrt(A**2 + B**2)
+
+    return psi_u, psi_d
+
+def odedos_m(E, r, U, m):
+    psi_u, psi_d = odepsi_m(E, r, U, m)
+    dos_m = np.abs(psi_u)**2 + np.abs(psi_d)**2
+    dos_m *= np.abs(E) / 4.0 / np.pi
+    return dos_m; 
+
 
 def doscalc(E,r,U,mlist):
     dos_tot = np.zeros((len(r), len(E)))
     for m in mlist:
         print m, E[0,], E[-1]
-        dosm = odedos_m(E,r,U,m)
+        dosm = odedos_m(E, r, U, m)
         dos_tot += dosm
     return 2.0 * dos_tot # We assume only m>=0 are included
 
@@ -170,22 +193,23 @@ def plotode(Emax, mlist):
 
 
 def test_rho():
+#    import pylab as pl
     Emin = -1.0
     Emax = -1e-4
     mlist = np.arange(0, 10.0, 1.0)
     r_0 = 1.0
     r = np.linspace(0.1, 50.0, 500)
-#    figure()
+#    pl.figure()
  
     for Z in [0.0, 0.1, 0.2, 0.3]:
         U = - Z / np.sqrt(r**2 + r_0**2)
         rho_0 = - (Emax**2 - Emin**2) / 4.0 / math.pi
         rho_rpa = -Z / 16.0 * r_0 / np.sqrt(r**2 + r_0**2)**3
         rho = rhocalc(Emin, Emax, r, U, mlist)
-#        plot (r, rho, label='Z = %g' % Z)
-#        plot (r, rho_0 + rho_rpa, label='Z = %g, rpa' % Z)
-#    legend()
-#    show()
+#        pl.plot (r, rho, label='Z = %g' % Z)
+#        pl.plot (r, rho_0 + rho_rpa, label='Z = %g, rpa' % Z)
+#    pl.legend()
+#    pl.show()
     
 
 if __name__ == '__main__':

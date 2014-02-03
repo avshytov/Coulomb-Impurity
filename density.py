@@ -71,7 +71,7 @@ class RPA_corr:
         if (kF * max(r_intra.r) > 0.01):
             Q_intra = rpacorr.RPA_corr_intra(r_intra.r, kF, r_intra.label)
         else:
-            Q_intra = np.zeros((len(r), len(Q_inter[0, :])))
+            Q_intra = np.zeros((len(r_intra.r), len(r_intra.r)))
         self.C_inter = Correction(r_inter.r, Q_inter)
         self.C_intra = Correction(r_intra.r, Q_intra)
         
