@@ -111,12 +111,11 @@ def solve_coulomb(rho_U, Uext, r, tau_u_set, tau_rho_set, **kwarg):
     it            = params['it']
     display_callback = params['display_callback']
     fname_template = params['fname_template']
-    
+
     rexp = util.make_exp_grid(r.min(), r.max(), len(r))
     C = coulomb.kernel( rexp )
     U = np.array( Uext )
     rho = np.zeros( (len(r)) )
-    it = 0
     j = 0
     zero_U = True
     
