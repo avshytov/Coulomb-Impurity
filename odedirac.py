@@ -185,23 +185,23 @@ def plotode(Emax, mlist):
 
 
 def test_rho():
-    import pylab as pl
+#    import pylab as pl
     Emin = -1.0
     Emax = -1e-4
     mlist = np.arange(0, 10.0, 1.0)
     r_0 = 1.0
     r = np.linspace(0.1, 50.0, 500)
-    pl.figure()
+#    pl.figure()
  
     for Z in [0.0, 0.1, 0.2, 0.3]:
         U = - Z / np.sqrt(r**2 + r_0**2)
         rho_0 = - (Emax**2 - Emin**2) / 4.0 / math.pi
         rho_rpa = -Z / 16.0 * r_0 / np.sqrt(r**2 + r_0**2)**3
         rho = rhocalc(Emin, Emax, r, U, mlist)
-        pl.plot (r, rho, label='Z = %g' % Z)
-        pl.plot (r, rho_0 + rho_rpa, label='Z = %g, rpa' % Z)
-    pl.legend()
-    pl.show()
+#        pl.plot (r, rho, label='Z = %g' % Z)
+#        pl.plot (r, rho_0 + rho_rpa, label='Z = %g, rpa' % Z)
+#    pl.legend()
+#    pl.show()
     
 
 if __name__ == '__main__':
