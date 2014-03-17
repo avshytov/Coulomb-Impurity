@@ -8,17 +8,19 @@ import iteration
 import density
 import pylab as pl
 import coulomb
+import os
 
 N = 500
 Mmax = 31
 rmin = 0.01
 rmax = 50.0
+start = 0 # Begin on this iteration
 
 r = util.make_lin_grid(rmin, rmax, N)
-Ef = 0.3
+Ef = 0.11
 B0 = 0.0
 Ecut = -3.0
-Z = 3
+Z = 4.5
 r_0 = 1.0
 Nf = 4
 alpha = 0.9
@@ -51,9 +53,17 @@ def rho_RPA(U, r):
 #pl.legend()
 #pl.show()
 
-fname_templ = util.makeFileTemplate("data/denssim-Z=%g-N=%g-Nfa=%g-Ef=%g" 
+#pathname = "data/sim/Ef=%g" %Ef
+#if not os.path.isdir(pathname):
+#    os.mkdir(pathname)
+#fname_templ = util.makeFileTemplate("denssim-Z=%g-N=%g-Nfa=%g-Ef=%g"
+#                                    % (Z, N, Nf*alpha, Ef))
+#in solve_coulomb fname_template = pathname+fname_templ
+
+
+fname_templ = util.makeFileTemplate("data/sim/denssim-Z=%g-N=%g-Nfa=%g-Ef=%g" 
                                     % (Z, N, Nf*alpha, Ef))
 
 iteration.solve_coulomb(rho_U, Uext, r, tau_u_set, tau_rho_set, 
-                        fname_template=fname_templ)
+                        it=start, fname_template=fname_templ)
 
