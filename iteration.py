@@ -99,7 +99,7 @@ def solve_coulomb(rho_U, Uext, r, tau_u_set, tau_rho_set, **kwarg):
            
     params = {
        'it'               : 0,
-       'zero_endpoint'    : True,
+       'zero_endpoint'    : False,
        'display_callback' : empty_callback, 
        'fname_template'   : "data/coulombsim-it=%d.npz"   
     } 
